@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- IMPEDISCE L'INDICIZZAZIONE SUI MOTORI DI RICERCA -->
+  <meta name="robots" content="noindex, nofollow">
+  
   <title>Pannello Redazione - Ermes UMG</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Quill.js Editor -->
@@ -89,7 +93,6 @@
               </tr>
             </thead>
             <tbody id="adminUsersTable" class="divide-y divide-slate-800">
-              <!-- Autori popolati dinamicamente -->
             </tbody>
           </table>
         </div>
@@ -97,7 +100,12 @@
 
       <!-- AREA EDITOR ARTICOLO -->
       <main class="max-w-4xl mx-auto my-4 sm:my-8 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-4">Nuovo Articolo</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
+          <button onclick="loadLastAuthorDraft()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border font-medium transition">
+            📂 Ripristina Ultima Bozza Locale
+          </button>
+        </div>
         
         <div class="space-y-4">
           <div>
@@ -121,7 +129,6 @@
             <div>
               <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
               <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs">
-                <!-- Checkboxes -->
               </div>
             </div>
           </div>
@@ -184,6 +191,7 @@
 
       if (users[u] && users[u].pass === p) {
         currentUser = users[u];
+        currentUser.key = u;
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardScreen").classList.remove("hidden");
         document.getElementById("userInfo").innerText = "Autore: " + currentUser.name;
@@ -241,7 +249,6 @@
       document.getElementById("newPass").value = "";
     }
 
-    // MODIFICA PASSWORD AUTORE ESISTENTE
     async function updatePassword(key) {
       const inputEl = document.getElementById(`passInput_${key}`);
       const newPassword = inputEl.value.trim();
@@ -321,7 +328,6 @@
       });
     }
 
-    // Gestore ottimizzato con compressione lato client per upload ultra-veloce
     function imageHandler() {
       const input = document.createElement('input');
       input.setAttribute('type', 'file');
@@ -335,7 +341,6 @@
           statusMsg.className = "text-sm font-medium text-blue-600 animate-pulse";
           statusMsg.innerText = "Ottimizzazione e caricamento immagine in corso...";
 
-          // Compressione e Ridimensionamento Immagine tramite Canvas
           const compressedBase64 = await compressImage(file, 1200, 0.8);
 
           try {
@@ -362,7 +367,6 @@
       };
     }
 
-    // Funzione helper per comprimere le foto prima dell'invio
     function compressImage(file, maxWidth, quality) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -385,7 +389,6 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Esporta in JPEG compresso
             resolve(canvas.toDataURL('image/jpeg', quality));
           };
         };
@@ -413,6 +416,27 @@
       } catch(e) {}
     }
 
+    // Salva bozza locale per autore
+    function saveAuthorDraftLocally(title, content) {
+      if (!currentUser) return;
+      const draftData = { title, content, date: new Date().toISOString() };
+      localStorage.setItem(`draft_${currentUser.key}`, JSON.stringify(draftData));
+    }
+
+    // Ripristina ultima bozza salvata
+    function loadLastAuthorDraft() {
+      if (!currentUser) return;
+      const saved = localStorage.getItem(`draft_${currentUser.key}`);
+      if (saved) {
+        const data = JSON.parse(saved);
+        document.getElementById("postTitle").value = data.title || "";
+        quill.clipboard.dangerouslyPasteHTML(data.content || "");
+        alert("✓ Bozza ripristinata con successo!");
+      } else {
+        alert("Nessuna bozza locale trovata per questo autore.");
+      }
+    }
+
     function logout() {
       currentUser = null;
       document.getElementById("loginScreen").classList.remove("hidden");
@@ -432,6 +456,9 @@
         statusMsg.innerText = "Inserisci sia il titolo che il testo prima di inviare.";
         return;
       }
+
+      // Salva bozza locale dell'autore
+      saveAuthorDraftLocally(title, rawContent);
 
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
