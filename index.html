@@ -84,7 +84,7 @@
               <tr>
                 <th class="p-2">Username</th>
                 <th class="p-2">Nome Completo</th>
-                <th class="p-2">Password</th>
+                <th class="p-2">Password Modificabile</th>
                 <th class="p-2">Azione</th>
               </tr>
             </thead>
@@ -167,7 +167,6 @@
       }
     });
 
-    // Carica database utenti
     async function fetchUsers() {
       try {
         const res = await fetch(WORKER_URL + "users");
@@ -177,7 +176,6 @@
     }
     fetchUsers();
 
-    // Login
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       await fetchUsers();
@@ -205,7 +203,6 @@
       }
     });
 
-    // Generatore password casuale per Admin
     function generatePassword() {
       const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
       let pass = "";
@@ -215,7 +212,6 @@
       document.getElementById("newPass").value = pass;
     }
 
-    // Aggiunta nuovo autore da Admin
     async function addNewUser() {
       const uKey = document.getElementById("newUsername").value.trim().toLowerCase();
       const name = document.getElementById("newName").value.trim();
@@ -245,7 +241,28 @@
       document.getElementById("newPass").value = "";
     }
 
-    // Elimina autore
+    // MODIFICA PASSWORD AUTORE ESISTENTE
+    async function updatePassword(key) {
+      const inputEl = document.getElementById(`passInput_${key}`);
+      const newPassword = inputEl.value.trim();
+
+      if (!newPassword) {
+        alert("La password non può essere vuota!");
+        return;
+      }
+
+      users[key].pass = newPassword;
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      alert(`✓ Password per l'autore "${users[key].name}" aggiornata con successo!`);
+      renderAdminUsers();
+    }
+
     async function deleteUser(key) {
       if (confirm(`Sei sicuro di voler eliminare l'autore ${users[key].name}?`)) {
         delete users[key];
@@ -269,9 +286,12 @@
         tr.innerHTML = `
           <td class="p-2 font-semibold text-blue-300">${key}</td>
           <td class="p-2">${u.name}</td>
-          <td class="p-2 font-mono text-amber-400">${u.pass}</td>
           <td class="p-2">
-            ${u.role !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : '<span class="text-slate-500">Admin</span>'}
+            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-400 w-32">
+          </td>
+          <td class="p-2 flex items-center gap-1">
+            <button onclick="updatePassword('${key}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold">Salva</button>
+            ${u.role !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : '<span class="text-slate-500 text-[10px]">Admin</span>'}
           </td>
         `;
         table.appendChild(tr);
