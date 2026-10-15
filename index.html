@@ -117,18 +117,70 @@
 
     let currentUser = null;
 
+    // Configurazione dell'editor Quill con upload automatico delle foto
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
-        toolbar: [
-          [{ 'header': [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          ['link', 'image'],
-          ['clean']
-        ]
+        toolbar: {
+          container: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'image'],
+            ['clean']
+          ],
+          handlers: {
+            image: imageHandler
+          }
+        }
       }
     });
+
+    // Gestore per caricare e inserire foto nell'articolo
+    function imageHandler() {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
+
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (file) {
+          const statusMsg = document.getElementById("statusMessage");
+          statusMsg.className = "text-sm font-medium text-blue-600";
+          statusMsg.innerText = "Caricamento immagine in corso...";
+
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = async () => {
+            const base64Image = reader.result;
+
+            try {
+              const res = await fetch(WORKER_URL + "upload-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: base64Image })
+              });
+
+              const data = await res.json();
+
+              if (data.link) {
+                const range = quill.getSelection(true);
+                quill.insertEmbed(range.index, 'image', data.link);
+                statusMsg.className = "text-sm font-medium text-emerald-600";
+                statusMsg.innerText = "✓ Immagine caricata con successo!";
+              } else {
+                statusMsg.className = "text-sm font-medium text-red-600";
+                statusMsg.innerText = "Errore durante il caricamento dell'immagine.";
+              }
+            } catch(e) {
+              statusMsg.className = "text-sm font-medium text-red-600";
+              statusMsg.innerText = "Errore di connessione durante il caricamento foto.";
+            }
+          };
+        }
+      };
+    }
 
     async function loadBloggerTags() {
       const select = document.getElementById("postCategory");
