@@ -21,7 +21,7 @@
       <form id="loginForm" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
-          <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          <input type="text" id="username" required placeholder="es. bruno.rachiele" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
@@ -33,13 +33,13 @@
     </div>
   </div>
 
-  <!-- Dashboard Redazione (Nascosta prima del login) -->
+  <!-- Dashboard Redazione -->
   <div id="dashboardScreen" class="hidden">
     <!-- Navbar -->
     <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
       <div class="flex items-center space-x-3">
         <span class="font-bold text-lg text-slate-900">Ermes UMG</span>
-        <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">Dashboard Autore</span>
+        <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">Pannello Redattori</span>
       </div>
       <div class="flex items-center space-x-4">
         <span id="userInfo" class="text-sm font-medium text-slate-600"></span>
@@ -57,36 +57,30 @@
           <input type="text" id="postTitle" placeholder="Inserisci il titolo..." class="w-full text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
         </div>
 
-        <!-- Categoria, Autore Principale e Co-Autori -->
+        <!-- Categorie dinamiche da Blogger, Autore e Co-Autori -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoria / Sezione</label>
-            <select id="postCategory" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="Universita">Università</option>
-              <option value="Attualita">Attualità</option>
-              <option value="Cultura">Cultura</option>
-              <option value="Sport">Sport</option>
-              <option value="Eventi">Eventi</option>
-              <option value="Opinioni">Opinioni</option>
+            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoria / Tag Principale</label>
+            <select id="postCategory" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+              <option value="">Caricamento tag in corso...</option>
             </select>
           </div>
 
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Autore Principale</label>
-            <input type="text" id="authorTagDisplay" disabled class="w-full px-4 py-2 border rounded-lg bg-slate-50 text-slate-500 font-medium cursor-not-allowed">
+            <input type="text" id="authorTagDisplay" disabled class="w-full px-4 py-2 border rounded-lg bg-slate-50 text-slate-500 font-medium cursor-not-allowed text-sm">
           </div>
 
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Collaboratori / Co-Autori</label>
-            <select id="coAuthorsSelect" multiple class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm h-20">
-              <!-- I co-autori verranno caricati dinamicamente -->
+            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
+            <select id="coAuthorsSelect" multiple class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm h-24">
             </select>
-            <p class="text-[10px] text-slate-400 mt-1">Tieni premuto CTRL (o CMD) per selezionare più collaboratori.</p>
+            <p class="text-[10px] text-slate-400 mt-1">Tieni premuto CTRL / CMD per Selezionare più autori.</p>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Contenuto (Caricamento foto disponibile nella barra)</label>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Contenuto dell'articolo</label>
           <div id="editor" class="h-80 bg-white"></div>
         </div>
 
@@ -102,35 +96,77 @@
   </div>
 
   <script>
-    // Elenco Utenti Redazione
+    const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
+
+    // Database Completo degli Autori e Link ufficiali
     const users = {
-      "autore1": { pass: "pass123", name: "Marco Rossi" },
-      "autore2": { pass: "pass123", name: "Giulia Bianchi" },
-      "autore3": { pass: "pass123", name: "Luca Verdi" }
+      "alessia.screnci": { pass: "pass123", name: "Alessia Screnci", link: "https://www.ermes-umg.it/p/alessia-screnci.html" },
+      "elisabeth.rosano": { pass: "pass123", name: "Elisabeth Rosanò", link: "https://www.ermes-umg.it/p/elisabeth-rosano.html" },
+      "giulia.dagostino": { pass: "pass123", name: "Giulia D'Agostino", link: "https://www.ermes-umg.it/p/giulia-dagostino.html" },
+      "alessio.mancuso": { pass: "pass123", name: "Alessio Carmine Mancuso", link: "https://www.ermes-umg.it/p/box-autore.html" },
+      "virginia.lacroce": { pass: "pass123", name: "Maria Virginia La Croce", link: "https://www.ermes-umg.it/p/maria-virginia-lacroce.html" },
+      "giuseppe.agostino": { pass: "pass123", name: "Giuseppe Agostino", link: "https://www.ermes-umg.it/p/giuseppe-agostino.html" },
+      "thomas.lepera": { pass: "pass123", name: "Thomas Le Pera", link: "https://www.ermes-umg.it/p/thomas-la-pera.html" },
+      "niccolo.ruscelli": { pass: "pass123", name: "Niccolò Ruscelli", link: "https://www.ermes-umg.it/p/niccolo-ruscelli.html" },
+      "aurelia.mangone": { pass: "pass123", name: "Aurelia Mangone", link: "https://www.ermes-umg.it/p/aurelia-mangone.html" },
+      "veronica.vecchio": { pass: "pass123", name: "Veronica Vecchio", link: "https://www.ermes-umg.it/p/veronica-vecchio.html" },
+      "riccardo.mangone": { pass: "pass123", name: "Riccardo Mangone", link: "https://www.ermes-umg.it/p/riccardo-mangone.html" },
+      "benedetta.punturiero": { pass: "pass123", name: "Benedetta Punturiero", link: "https://www.ermes-umg.it/p/benedetta-punturiero.html" },
+      "domenica.leuzzi": { pass: "pass123", name: "Domenica Pia Leuzzi", link: "https://www.ermes-umg.it/p/domenica-pia-leuzzi.html" },
+      "chiara.navarra": { pass: "pass123", name: "Chiara Navarra", link: "https://www.ermes-umg.it/p/chiara-navarra.html" },
+      "antongiulio.iorfida": { pass: "pass123", name: "Antongiulio Iorfida", link: "https://www.ermes-umg.it/p/antongiulio-iofida.html" },
+      "lara.cosentino": { pass: "pass123", name: "Lara Cosentino", link: "https://www.ermes-umg.it/p/lara-cosentino.html" },
+      "francesca.romeo": { pass: "pass123", name: "Francesca Romeo", link: "https://www.ermes-umg.it/p/francesca-romeo.html" },
+      "bruno.rachiele": { pass: "pass123", name: "Bruno Rachiele", link: "https://www.ermes-umg.it/p/bruno-rachiele.html" }
     };
 
     let currentUser = null;
 
-    // Inizializzazione Editor Quill
+    // Inizializzazione Editor Quill.js
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
-        toolbar: {
-          container: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['link', 'image'],
-            ['clean']
-          ]
-        }
+        toolbar: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'image'],
+          ['clean']
+        ]
       }
     });
 
-    // Gestione Login
+    // Recupera in tempo reale tutti i tag esistenti da Blogger
+    async function loadBloggerTags() {
+      const select = document.getElementById("postCategory");
+      try {
+        const res = await fetch(WORKER_URL);
+        const data = await res.json();
+        
+        select.innerHTML = "";
+        
+        if (data.labels && data.labels.length > 0) {
+          data.labels.forEach(tag => {
+            // Escludiamo le etichette autore dal menu delle categorie
+            if (!tag.startsWith("Autore:")) {
+              const opt = document.createElement("option");
+              opt.value = tag;
+              opt.innerText = tag;
+              select.appendChild(opt);
+            }
+          });
+        } else {
+          select.innerHTML = '<option value="attualità">attualità</option><option value="Cultura">Cultura</option><option value="università">università</option>';
+        }
+      } catch(e) {
+        select.innerHTML = '<option value="attualità">attualità</option><option value="Cultura">Cultura</option><option value="università">università</option>';
+      }
+    }
+
+    // Login logic
     document.getElementById("loginForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const u = document.getElementById("username").value.trim();
+      const u = document.getElementById("username").value.trim().toLowerCase();
       const p = document.getElementById("password").value.trim();
 
       if (users[u] && users[u].pass === p) {
@@ -141,8 +177,8 @@
         document.getElementById("authorTagDisplay").value = currentUser.name;
         document.getElementById("loginError").classList.add("hidden");
 
-        // Popoliamo la lista dei co-autori escludendo l'utente corrente
         populateCoAuthorsList();
+        loadBloggerTags();
       } else {
         document.getElementById("loginError").classList.remove("hidden");
       }
@@ -155,7 +191,7 @@
       Object.keys(users).forEach(key => {
         if (users[key].name !== currentUser.name) {
           const opt = document.createElement("option");
-          opt.value = users[key].name;
+          opt.value = key;
           opt.innerText = users[key].name;
           coAuthorsSelect.appendChild(opt);
         }
@@ -184,33 +220,34 @@
         return;
       }
 
-      // Recuperiamo i collaboratori selezionati
+      // Recuperiamo i co-autori selezionati
       const coAuthorsSelect = document.getElementById("coAuthorsSelect");
-      const selectedCoAuthors = Array.from(coAuthorsSelect.selectedOptions).map(opt => opt.value);
+      const selectedCoAuthorKeys = Array.from(coAuthorsSelect.selectedOptions).map(opt => opt.value);
 
-      // Generazione dicitura "Scritto da ..." in cima al testo
-      let byline = `<p><em><strong>Scritto da ${currentUser.name}</strong>`;
-      if (selectedCoAuthors.length > 0) {
-        byline += ` in collaborazione con ${selectedCoAuthors.join(", ")}`;
+      // Creazione dicitura ipertestuale "Scritto da..."
+      let byline = `<p><em><strong>Scritto da <a href="${currentUser.link}" target="_blank">${currentUser.name}</a></strong>`;
+      
+      const labels = [category, currentUser.name, "Autore: " + currentUser.name];
+
+      if (selectedCoAuthorKeys.length > 0) {
+        const coAuthorsLinks = selectedCoAuthorKeys.map(key => {
+          const coAuthor = users[key];
+          labels.push(coAuthor.name);
+          labels.push("Autore: " + coAuthor.name);
+          return `<a href="${coAuthor.link}" target="_blank">${coAuthor.name}</a>`;
+        });
+        byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
       }
+      
       byline += `</em></p><hr><br>`;
 
-      // Uniamo la dicitura automatica con il contenuto inserito dall'autore
       const finalContent = byline + rawContent;
-
-      // Generiamo l'array delle etichette (categoria + autore principale + collaboratori)
-      const labels = [category, "Autore: " + currentUser.name];
-      selectedCoAuthors.forEach(coAuthor => {
-        labels.push("Autore: " + coAuthor);
-      });
 
       statusMsg.className = "text-sm font-medium text-blue-600";
       statusMsg.innerText = "Invio della bozza in corso...";
       saveBtn.disabled = true;
 
       try {
-        const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
-
         const response = await fetch(WORKER_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -221,7 +258,7 @@
 
         if (response.ok && result.success) {
           statusMsg.className = "text-sm font-medium text-emerald-600";
-          statusMsg.innerText = "✓ Bozza salvata con successo con intestazione e tag autori!";
+          statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
           document.getElementById("postTitle").value = "";
           quill.setContents([]);
           coAuthorsSelect.selectedIndex = -1;
