@@ -14,17 +14,16 @@
   <!-- Schermata di Login -->
   <div id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 text-center">
-      <!-- Logo del sito -->
       <div class="flex justify-center mb-4">
         <img src="https://www.ermes-umg.it/favicon.ico" alt="Ermes UMG Logo" class="h-16 w-16 object-contain rounded-xl shadow-sm border border-slate-100 p-1">
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Redazione Ermes UMG</h1>
-      <p class="text-slate-500 text-sm mt-1 mb-6">Accedi per creare e inviare le tue bozze</p>
+      <p class="text-slate-500 text-sm mt-1 mb-6">Accedi per gestire autori o inviare articoli</p>
 
       <form id="loginForm" class="space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
-          <input type="text" id="username" required placeholder="es. nome.cognome" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          <input type="text" id="username" required placeholder="es. bruno.rachiele" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
@@ -34,14 +33,13 @@
         <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition shadow-sm">Accedi</button>
       </form>
 
-      <!-- Credits Footer -->
       <div class="mt-8 pt-4 border-t border-slate-100 text-xs text-slate-400">
         <p>Creato da <span class="font-semibold text-slate-600">Bruno Rachiele</span></p>
       </div>
     </div>
   </div>
 
-  <!-- Dashboard Redazione -->
+  <!-- Dashboard Principale -->
   <div id="dashboardScreen" class="hidden min-h-screen flex flex-col justify-between">
     <div>
       <!-- Navbar -->
@@ -49,7 +47,7 @@
         <div class="flex items-center space-x-3">
           <img src="https://www.ermes-umg.it/favicon.ico" alt="Logo" class="h-8 w-8 object-contain">
           <span class="font-bold text-base sm:text-lg text-slate-900">Ermes UMG</span>
-          <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">Pannello Redattori</span>
+          <span id="roleBadge" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">Redattore</span>
         </div>
         <div class="flex items-center space-x-3">
           <span id="userInfo" class="text-xs sm:text-sm font-medium text-slate-600"></span>
@@ -57,7 +55,47 @@
         </div>
       </nav>
 
-      <!-- Area Editor Mobile Friendly -->
+      <!-- PANNELLO ADMIN (Visibile solo per admin) -->
+      <div id="adminPanel" class="hidden max-w-4xl mx-auto my-6 p-6 bg-slate-900 text-white rounded-2xl shadow-md border border-slate-800">
+        <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+          ⚙️ Pannello Amministrazione Autori
+        </h3>
+
+        <!-- Form Nuovo Autore -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
+          <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+          <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+          <input type="text" id="newLink" placeholder="Link Pagina Autore" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+          
+          <div class="flex gap-2">
+            <input type="text" id="newPass" placeholder="Password" class="w-full px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none font-mono">
+            <button onclick="generatePassword()" class="bg-slate-600 hover:bg-slate-500 text-xs px-2.5 py-2 rounded font-semibold transition" title="Genera password casuale">🔑</button>
+          </div>
+          
+          <button onclick="addNewUser()" class="md:col-span-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
+            + Aggiungi Nuovo Autore
+          </button>
+        </div>
+
+        <!-- Lista Autori Esistenti -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="p-2">Username</th>
+                <th class="p-2">Nome Completo</th>
+                <th class="p-2">Password</th>
+                <th class="p-2">Azione</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTable" class="divide-y divide-slate-800">
+              <!-- Autori popolati dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AREA EDITOR ARTICOLO -->
       <main class="max-w-4xl mx-auto my-4 sm:my-8 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
         <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-4">Nuovo Articolo</h2>
         
@@ -80,11 +118,10 @@
               <input type="text" id="authorTagDisplay" disabled class="w-full px-3 py-2 border rounded-lg bg-slate-50 text-slate-500 font-medium cursor-not-allowed text-sm">
             </div>
 
-            <!-- Co-Autori con Checkboxes (Flags) -->
             <div>
               <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
               <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs">
-                <!-- Generato dinamicamente con Checkboxes -->
+                <!-- Checkboxes -->
               </div>
             </div>
           </div>
@@ -94,7 +131,6 @@
             <div id="editor" class="h-64 sm:h-80 bg-white"></div>
           </div>
 
-          <!-- Bar Azioni -->
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
             <span id="statusMessage" class="text-sm font-medium text-center sm:text-left"></span>
             <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-sm transition flex items-center justify-center space-x-2">
@@ -112,28 +148,7 @@
 
   <script>
     const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
-
-    const users = {
-      "alessia.screnci": { pass: "pass123", name: "Alessia Screnci", link: "https://www.ermes-umg.it/p/alessia-screnci.html" },
-      "elisabeth.rosano": { pass: "pass123", name: "Elisabeth Rosanò", link: "https://www.ermes-umg.it/p/elisabeth-rosano.html" },
-      "giulia.dagostino": { pass: "pass123", name: "Giulia D'Agostino", link: "https://www.ermes-umg.it/p/giulia-dagostino.html" },
-      "alessio.mancuso": { pass: "pass123", name: "Alessio Carmine Mancuso", link: "https://www.ermes-umg.it/p/box-autore.html" },
-      "virginia.lacroce": { pass: "pass123", name: "Maria Virginia La Croce", link: "https://www.ermes-umg.it/p/maria-virginia-lacroce.html" },
-      "giuseppe.agostino": { pass: "pass123", name: "Giuseppe Agostino", link: "https://www.ermes-umg.it/p/giuseppe-agostino.html" },
-      "thomas.lepera": { pass: "pass123", name: "Thomas Le Pera", link: "https://www.ermes-umg.it/p/thomas-la-pera.html" },
-      "niccolo.ruscelli": { pass: "pass123", name: "Niccolò Ruscelli", link: "https://www.ermes-umg.it/p/niccolo-ruscelli.html" },
-      "aurelia.mangone": { pass: "pass123", name: "Aurelia Mangone", link: "https://www.ermes-umg.it/p/aurelia-mangone.html" },
-      "veronica.vecchio": { pass: "pass123", name: "Veronica Vecchio", link: "https://www.ermes-umg.it/p/veronica-vecchio.html" },
-      "riccardo.mangone": { pass: "pass123", name: "Riccardo Mangone", link: "https://www.ermes-umg.it/p/riccardo-mangone.html" },
-      "benedetta.punturiero": { pass: "pass123", name: "Benedetta Punturiero", link: "https://www.ermes-umg.it/p/benedetta-punturiero.html" },
-      "domenica.leuzzi": { pass: "pass123", name: "Domenica Pia Leuzzi", link: "https://www.ermes-umg.it/p/domenica-pia-leuzzi.html" },
-      "chiara.navarra": { pass: "pass123", name: "Chiara Navarra", link: "https://www.ermes-umg.it/p/chiara-navarra.html" },
-      "antongiulio.iorfida": { pass: "pass123", name: "Antongiulio Iorfida", link: "https://www.ermes-umg.it/p/antongiulio-iofida.html" },
-      "lara.cosentino": { pass: "pass123", name: "Lara Cosentino", link: "https://www.ermes-umg.it/p/lara-cosentino.html" },
-      "francesca.romeo": { pass: "pass123", name: "Francesca Romeo", link: "https://www.ermes-umg.it/p/francesca-romeo.html" },
-      "bruno.rachiele": { pass: "pass123", name: "Bruno Rachiele", link: "https://www.ermes-umg.it/p/bruno-rachiele.html" }
-    };
-
+    let users = {};
     let currentUser = null;
 
     const quill = new Quill('#editor', {
@@ -147,12 +162,144 @@
             ['link', 'image'],
             ['clean']
           ],
-          handlers: {
-            image: imageHandler
-          }
+          handlers: { image: imageHandler }
         }
       }
     });
+
+    // Carica database utenti
+    async function fetchUsers() {
+      try {
+        const res = await fetch(WORKER_URL + "users");
+        const data = await res.json();
+        users = data.users || {};
+      } catch(e) { console.error("Errore recupero utenti", e); }
+    }
+    fetchUsers();
+
+    // Login
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      await fetchUsers();
+      const u = document.getElementById("username").value.trim().toLowerCase();
+      const p = document.getElementById("password").value.trim();
+
+      if (users[u] && users[u].pass === p) {
+        currentUser = users[u];
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("dashboardScreen").classList.remove("hidden");
+        document.getElementById("userInfo").innerText = "Autore: " + currentUser.name;
+        document.getElementById("authorTagDisplay").value = currentUser.name;
+        document.getElementById("loginError").classList.add("hidden");
+
+        if (currentUser.role === "admin") {
+          document.getElementById("adminPanel").classList.remove("hidden");
+          document.getElementById("roleBadge").innerText = "Amministratore";
+          renderAdminUsers();
+        }
+
+        populateCoAuthorsCheckboxes();
+        loadBloggerTags();
+      } else {
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+    });
+
+    // Generatore password casuale per Admin
+    function generatePassword() {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
+      let pass = "";
+      for (let i = 0; i < 10; i++) {
+        pass += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById("newPass").value = pass;
+    }
+
+    // Aggiunta nuovo autore da Admin
+    async function addNewUser() {
+      const uKey = document.getElementById("newUsername").value.trim().toLowerCase();
+      const name = document.getElementById("newName").value.trim();
+      const link = document.getElementById("newLink").value.trim();
+      const pass = document.getElementById("newPass").value.trim();
+
+      if (!uKey || !name || !pass) {
+        alert("Compila tutti i campi obbligatori!");
+        return;
+      }
+
+      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role: "author" };
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      renderAdminUsers();
+      populateCoAuthorsCheckboxes();
+      alert("✓ Nuovo autore aggiunto con successo!");
+      
+      document.getElementById("newUsername").value = "";
+      document.getElementById("newName").value = "";
+      document.getElementById("newLink").value = "";
+      document.getElementById("newPass").value = "";
+    }
+
+    // Elimina autore
+    async function deleteUser(key) {
+      if (confirm(`Sei sicuro di voler eliminare l'autore ${users[key].name}?`)) {
+        delete users[key];
+        await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+        renderAdminUsers();
+        populateCoAuthorsCheckboxes();
+      }
+    }
+
+    function renderAdminUsers() {
+      const table = document.getElementById("adminUsersTable");
+      table.innerHTML = "";
+      Object.keys(users).forEach(key => {
+        const u = users[key];
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800 transition";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-blue-300">${key}</td>
+          <td class="p-2">${u.name}</td>
+          <td class="p-2 font-mono text-amber-400">${u.pass}</td>
+          <td class="p-2">
+            ${u.role !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : '<span class="text-slate-500">Admin</span>'}
+          </td>
+        `;
+        table.appendChild(tr);
+      });
+    }
+
+    function populateCoAuthorsCheckboxes() {
+      const container = document.getElementById("coAuthorsList");
+      container.innerHTML = "";
+      Object.keys(users).forEach(key => {
+        if (users[key].name !== currentUser.name && users[key].role !== "admin") {
+          const label = document.createElement("label");
+          label.className = "flex items-center space-x-2 text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded transition";
+          
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.value = key;
+          checkbox.className = "coauthor-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4";
+
+          const span = document.createElement("span");
+          span.innerText = users[key].name;
+
+          label.appendChild(checkbox);
+          label.appendChild(span);
+          container.appendChild(label);
+        }
+      });
+    }
 
     function imageHandler() {
       const input = document.createElement('input');
@@ -171,28 +318,22 @@
           reader.readAsDataURL(file);
           reader.onload = async () => {
             const base64Image = reader.result;
-
             try {
               const res = await fetch(WORKER_URL + "upload-image", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ image: base64Image })
               });
-
               const data = await res.json();
-
               if (data.link) {
                 const range = quill.getSelection(true);
                 quill.insertEmbed(range.index, 'image', data.link);
                 statusMsg.className = "text-sm font-medium text-emerald-600";
                 statusMsg.innerText = "✓ Immagine caricata con successo!";
-              } else {
-                statusMsg.className = "text-sm font-medium text-red-600";
-                statusMsg.innerText = "Errore durante il caricamento dell'immagine.";
               }
             } catch(e) {
               statusMsg.className = "text-sm font-medium text-red-600";
-              statusMsg.innerText = "Errore di connessione durante il caricamento foto.";
+              statusMsg.innerText = "Errore di connessione nel caricamento foto.";
             }
           };
         }
@@ -216,64 +357,15 @@
               select.appendChild(opt);
             }
           });
-        } else {
-          select.innerHTML = '<option value="attualità">attualità</option><option value="Cultura">Cultura</option><option value="università">università</option>';
         }
-      } catch(e) {
-        select.innerHTML = '<option value="attualità">attualità</option><option value="Cultura">Cultura</option><option value="università">università</option>';
-      }
-    }
-
-    document.getElementById("loginForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const u = document.getElementById("username").value.trim().toLowerCase();
-      const p = document.getElementById("password").value.trim();
-
-      if (users[u] && users[u].pass === p) {
-        currentUser = users[u];
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("dashboardScreen").classList.remove("hidden");
-        document.getElementById("userInfo").innerText = "Autore: " + currentUser.name;
-        document.getElementById("authorTagDisplay").value = currentUser.name;
-        document.getElementById("loginError").classList.add("hidden");
-
-        populateCoAuthorsCheckboxes();
-        loadBloggerTags();
-      } else {
-        document.getElementById("loginError").classList.remove("hidden");
-      }
-    });
-
-    function populateCoAuthorsCheckboxes() {
-      const container = document.getElementById("coAuthorsList");
-      container.innerHTML = "";
-
-      Object.keys(users).forEach(key => {
-        if (users[key].name !== currentUser.name) {
-          const label = document.createElement("label");
-          label.className = "flex items-center space-x-2 text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded transition";
-          
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.value = key;
-          checkbox.className = "coauthor-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4";
-
-          const span = document.createElement("span");
-          span.innerText = users[key].name;
-
-          label.appendChild(checkbox);
-          label.appendChild(span);
-          container.appendChild(label);
-        }
-      });
+      } catch(e) {}
     }
 
     function logout() {
       currentUser = null;
       document.getElementById("loginScreen").classList.remove("hidden");
       document.getElementById("dashboardScreen").classList.add("hidden");
-      document.getElementById("username").value = "";
-      document.getElementById("password").value = "";
+      document.getElementById("adminPanel").classList.add("hidden");
     }
 
     async function saveDraft() {
@@ -289,7 +381,6 @@
         return;
       }
 
-      // Recupera tutti i coautori selezionati con il flag (checkbox)
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
 
