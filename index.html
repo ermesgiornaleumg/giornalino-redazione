@@ -174,7 +174,6 @@
       }
     });
 
-    // Evento per intercettare i cambiamenti nell'editor e salvare in background
     quill.on('text-change', function() {
       triggerAutoSave();
     });
@@ -183,14 +182,22 @@
       try {
         const res = await fetch(WORKER_URL + "users");
         const data = await res.json();
-        users = data.users || {};
-      } catch(e) { console.error("Errore recupero utenti", e); }
+        if (data.users) {
+          users = data.users;
+        }
+      } catch(e) { 
+        console.error("Errore recupero utenti", e); 
+      }
     }
     fetchUsers();
 
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
+      const statusMsg = document.getElementById("loginError");
+      statusMsg.classList.add("hidden");
+
       await fetchUsers();
+
       const u = document.getElementById("username").value.trim().toLowerCase();
       const p = document.getElementById("password").value.trim();
 
@@ -201,7 +208,6 @@
         document.getElementById("dashboardScreen").classList.remove("hidden");
         document.getElementById("userInfo").innerText = "Autore: " + currentUser.name;
         document.getElementById("authorTagDisplay").value = currentUser.name;
-        document.getElementById("loginError").classList.add("hidden");
 
         if (currentUser.role === "admin") {
           document.getElementById("adminPanel").classList.remove("hidden");
@@ -211,32 +217,39 @@
 
         populateCoAuthorsCheckboxes();
         loadBloggerTags();
-        
-        // Verifico se esiste una bozza non inviata per questo autore
         checkUnsavedDraft();
       } else {
-        document.getElementById("loginError").classList.remove("hidden");
+        statusMsg.innerText = "Credenziali non valide o password errata.";
+        statusMsg.classList.remove("hidden");
       }
     });
 
-    // CAMBIO PASSWORD PER IL SINGOLO AUTORE
     async function changeOwnPassword() {
       const newPass = prompt("Inserisci la tua nuova password:");
       if (newPass && newPass.trim().length > 0) {
-        users[currentUser.key].pass = newPass.trim();
-        currentUser.pass = newPass.trim();
+        const cleanPass = newPass.trim();
+        users[currentUser.key].pass = cleanPass;
+        currentUser.pass = cleanPass;
 
-        await fetch(WORKER_URL + "users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ users })
-        });
+        try {
+          const res = await fetch(WORKER_URL + "users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ users })
+          });
 
-        alert("✓ Password modificata con successo!");
+          if (res.ok) {
+            alert("✓ La tua password è stata aggiornata con successo!");
+            if (currentUser.role === "admin") renderAdminUsers();
+          } else {
+            alert("Errore nel salvataggio della password sul server.");
+          }
+        } catch(e) {
+          alert("Errore di connessione durante l'aggiornamento della password.");
+        }
       }
     }
 
-    // SALVATAGGIO AUTOMATICO LOCALE PER AUTORE
     function triggerAutoSave() {
       if (!currentUser) return;
       const title = document.getElementById("postTitle").value.trim();
@@ -249,7 +262,6 @@
       }
     }
 
-    // CONTROLLO BOZZA NON SALVATA ALL'ACCESSO
     function checkUnsavedDraft() {
       const saved = localStorage.getItem(`auto_draft_${currentUser.key}`);
       if (saved) {
@@ -317,14 +329,22 @@
 
       users[key].pass = newPassword;
 
-      await fetch(WORKER_URL + "users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ users })
-      });
+      try {
+        const res = await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
 
-      alert(`✓ Password per l'autore "${users[key].name}" aggiornata con successo!`);
-      renderAdminUsers();
+        if (res.ok) {
+          alert(`✓ Password per "${users[key].name}" aggiornata e salvata!`);
+          renderAdminUsers();
+        } else {
+          alert("Errore durante il salvataggio sul server.");
+        }
+      } catch(e) {
+        alert("Errore di rete durante il salvataggio.");
+      }
     }
 
     async function deleteUser(key) {
@@ -529,7 +549,6 @@
           statusMsg.className = "text-sm font-medium text-emerald-600";
           statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
           
-          // Limpiamos borrador local al enviar con éxito
           localStorage.removeItem(`auto_draft_${currentUser.key}`);
           document.getElementById("postTitle").value = "";
           quill.setContents([]);
