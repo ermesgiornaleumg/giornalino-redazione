@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- NO-INDEX PER EVITARE L'INDICIZZAZIONE SUI MOTORI DI RICERCA -->
+  <!-- IMPEDISCE L'INDICIZZAZIONE SUI MOTORI DI RICERCA -->
   <meta name="robots" content="noindex, nofollow">
   
   <title>Pannello Redazione - Ermes UMG</title>
@@ -55,7 +55,8 @@
         </div>
         <div class="flex items-center space-x-3">
           <span id="userInfo" class="text-xs sm:text-sm font-medium text-slate-600"></span>
-          <button onclick="logout()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-md transition">Esci</button>
+          <button onclick="changeOwnPassword()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-md transition border">🔑 Cambia Password</button>
+          <button onclick="logout()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-md transition border border-red-200">Esci</button>
         </div>
       </nav>
 
@@ -88,7 +89,7 @@
               <tr>
                 <th class="p-2">Username</th>
                 <th class="p-2">Nome Completo</th>
-                <th class="p-2">Password Modificabile</th>
+                <th class="p-2">Password (Visibile e Modificabile)</th>
                 <th class="p-2">Azione</th>
               </tr>
             </thead>
@@ -100,23 +101,15 @@
 
       <!-- AREA EDITOR ARTICOLO -->
       <main class="max-w-4xl mx-auto my-4 sm:my-8 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+        <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
-          
-          <div class="flex gap-2">
-            <button onclick="saveCloudDraft(true)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border font-medium transition flex items-center gap-1">
-              ☁️ Salva Bozza Cloud
-            </button>
-            <button onclick="loadCloudDraft()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-200 font-medium transition flex items-center gap-1">
-              📂 Ripristina da Cloud
-            </button>
-          </div>
+          <span id="autoSaveIndicator" class="text-xs text-slate-400 italic">Salvataggio automatico attivo</span>
         </div>
         
         <div class="space-y-4">
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Titolo dell'articolo</label>
-            <input type="text" id="postTitle" placeholder="Inserisci il titolo..." class="w-full text-base sm:text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+            <input type="text" id="postTitle" oninput="triggerAutoSave()" placeholder="Inserisci il titolo..." class="w-full text-base sm:text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -181,6 +174,11 @@
       }
     });
 
+    // Evento per intercettare i cambiamenti nell'editor e salvare in background
+    quill.on('text-change', function() {
+      triggerAutoSave();
+    });
+
     async function fetchUsers() {
       try {
         const res = await fetch(WORKER_URL + "users");
@@ -214,12 +212,61 @@
         populateCoAuthorsCheckboxes();
         loadBloggerTags();
         
-        // Controlla se è presente una bozza cloud salvata per questo autore
-        checkAndNotifyCloudDraft();
+        // Verifico se esiste una bozza non inviata per questo autore
+        checkUnsavedDraft();
       } else {
         document.getElementById("loginError").classList.remove("hidden");
       }
     });
+
+    // CAMBIO PASSWORD PER IL SINGOLO AUTORE
+    async function changeOwnPassword() {
+      const newPass = prompt("Inserisci la tua nuova password:");
+      if (newPass && newPass.trim().length > 0) {
+        users[currentUser.key].pass = newPass.trim();
+        currentUser.pass = newPass.trim();
+
+        await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+
+        alert("✓ Password modificata con successo!");
+      }
+    }
+
+    // SALVATAGGIO AUTOMATICO LOCALE PER AUTORE
+    function triggerAutoSave() {
+      if (!currentUser) return;
+      const title = document.getElementById("postTitle").value.trim();
+      const content = quill.root.innerHTML;
+
+      if (title.length > 0 || quill.getText().trim().length > 0) {
+        const draft = { title, content, updated: new Date().toLocaleTimeString() };
+        localStorage.setItem(`auto_draft_${currentUser.key}`, JSON.stringify(draft));
+        document.getElementById("autoSaveIndicator").innerText = `Bozza salvata alle ${draft.updated}`;
+      }
+    }
+
+    // CONTROLLO BOZZA NON SALVATA ALL'ACCESSO
+    function checkUnsavedDraft() {
+      const saved = localStorage.getItem(`auto_draft_${currentUser.key}`);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.title || (draft.content && draft.content !== '<p><br></p>')) {
+          setTimeout(() => {
+            if (confirm("Hai una bozza salvata non inviata. Vuoi continuare a modificarla?")) {
+              document.getElementById("postTitle").value = draft.title || "";
+              quill.clipboard.dangerouslyPasteHTML(draft.content || "");
+              document.getElementById("autoSaveIndicator").innerText = `Bozza ripristinata (${draft.updated})`;
+            } else {
+              localStorage.removeItem(`auto_draft_${currentUser.key}`);
+            }
+          }, 300);
+        }
+      }
+    }
 
     function generatePassword() {
       const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
@@ -304,7 +351,7 @@
           <td class="p-2 font-semibold text-blue-300">${key}</td>
           <td class="p-2">${u.name}</td>
           <td class="p-2">
-            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-400 w-32">
+            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-400 w-36">
           </td>
           <td class="p-2 flex items-center gap-1">
             <button onclick="updatePassword('${key}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold">Salva</button>
@@ -426,90 +473,6 @@
       } catch(e) {}
     }
 
-    // SALVATAGGIO BOZZA CLOUD PER AUTORE
-    async function saveCloudDraft(showAlert = false) {
-      if (!currentUser) return;
-      const title = document.getElementById("postTitle").value.trim();
-      const content = quill.root.innerHTML;
-      
-      if (!title && quill.getText().trim().length === 0) {
-        if (showAlert) alert("Inserisci del testo o un titolo prima di salvare la bozza!");
-        return;
-      }
-
-      const statusMsg = document.getElementById("statusMessage");
-      statusMsg.className = "text-sm font-medium text-blue-600";
-      statusMsg.innerText = "Salvataggio bozza cloud in corso...";
-
-      const draftData = {
-        title,
-        content,
-        date: new Date().toLocaleString("it-IT")
-      };
-
-      try {
-        const res = await fetch(`${WORKER_URL}drafts?author=${currentUser.key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ draft: draftData })
-        });
-
-        if (res.ok) {
-          statusMsg.className = "text-sm font-medium text-emerald-600";
-          statusMsg.innerText = `✓ Bozza salvata nel cloud alle ${draftData.date}`;
-          if (showAlert) alert("✓ Bozza salvata nel cloud con successo!");
-        } else {
-          statusMsg.className = "text-sm font-medium text-red-600";
-          statusMsg.innerText = "Errore durante il salvataggio della bozza cloud.";
-        }
-      } catch(e) {
-        statusMsg.className = "text-sm font-medium text-red-600";
-        statusMsg.innerText = "Errore di connessione durante il salvataggio della bozza.";
-      }
-    }
-
-    // CARICAMENTO BOZZA CLOUD PER AUTORE
-    async function loadCloudDraft() {
-      if (!currentUser) return;
-      const statusMsg = document.getElementById("statusMessage");
-      statusMsg.className = "text-sm font-medium text-blue-600";
-      statusMsg.innerText = "Recupero bozza cloud in corso...";
-
-      try {
-        const res = await fetch(`${WORKER_URL}drafts?author=${currentUser.key}`);
-        const data = await res.json();
-
-        if (data.draft) {
-          document.getElementById("postTitle").value = data.draft.title || "";
-          quill.clipboard.dangerouslyPasteHTML(data.draft.content || "");
-          
-          statusMsg.className = "text-sm font-medium text-emerald-600";
-          statusMsg.innerText = `✓ Bozza ripristinata (salvata il ${data.draft.date})`;
-          alert("✓ Bozza ripristinata con successo!");
-        } else {
-          statusMsg.className = "text-sm font-medium text-slate-500";
-          statusMsg.innerText = "Nessuna bozza salvata trovata nel cloud.";
-          alert("Nessuna bozza salvata trovata nel cloud per il tuo account.");
-        }
-      } catch(e) {
-        statusMsg.className = "text-sm font-medium text-red-600";
-        statusMsg.innerText = "Errore di connessione nel recupero della bozza.";
-      }
-    }
-
-    async function checkAndNotifyCloudDraft() {
-      if (!currentUser) return;
-      try {
-        const res = await fetch(`${WORKER_URL}drafts?author=${currentUser.key}`);
-        const data = await res.json();
-        if (data.draft && (data.draft.title || data.draft.content)) {
-          const statusMsg = document.getElementById("statusMessage");
-          statusMsg.className = "text-sm font-medium text-blue-600";
-          statusMsg.innerText = `ℹ️ Hai una bozza cloud del ${data.draft.date}. Clicca "Ripristina da Cloud" per ricaricarla.`;
-        }
-      } catch(e) {}
-    }
-
     function logout() {
       currentUser = null;
       document.getElementById("loginScreen").classList.remove("hidden");
@@ -529,9 +492,6 @@
         statusMsg.innerText = "Inserisci sia il titolo che il testo prima di inviare.";
         return;
       }
-
-      // Salva preventivamente la bozza nel Cloud
-      await saveCloudDraft(false);
 
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
@@ -568,9 +528,13 @@
         if (response.ok && result.success) {
           statusMsg.className = "text-sm font-medium text-emerald-600";
           statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
+          
+          // Limpiamos borrador local al enviar con éxito
+          localStorage.removeItem(`auto_draft_${currentUser.key}`);
           document.getElementById("postTitle").value = "";
           quill.setContents([]);
           document.querySelectorAll('.coauthor-checkbox').forEach(cb => cb.checked = false);
+          document.getElementById("autoSaveIndicator").innerText = "Salvataggio automatico attivo";
         } else {
           statusMsg.className = "text-sm font-medium text-red-600";
           statusMsg.innerText = "Errore: " + (result.error || "Impossibile salvare la bozza.");
