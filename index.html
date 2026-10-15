@@ -140,6 +140,7 @@
     }
 
     // Funzione Invio Bozza a Blogger
+    // Funzione Invio Bozza a Blogger
     async function saveDraft() {
       const title = document.getElementById("postTitle").value.trim();
       const content = quill.root.innerHTML;
@@ -157,23 +158,29 @@
       saveBtn.disabled = true;
 
       try {
-        // Qui collegheremo la chiamata al nostro Worker/Proxy Serverless
-        // Esempio temporaneo di verifica dell'invio:
-        console.log("Titolo:", title);
-        console.log("Contenuto HTML:", content);
+        const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
 
-        setTimeout(() => {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, content })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
           statusMsg.className = "text-sm font-medium text-emerald-600";
           statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
-          saveBtn.disabled = false;
-          // Resetta i campi
           document.getElementById("postTitle").value = "";
           quill.setContents([]);
-        }, 1500);
-
+        } else {
+          statusMsg.className = "text-sm font-medium text-red-600";
+          statusMsg.innerText = "Errore: " + (result.error || "Impossibile salvare la bozza.");
+        }
       } catch (err) {
         statusMsg.className = "text-sm font-medium text-red-600";
-        statusMsg.innerText = "Errore durante il salvataggio della bozza.";
+        statusMsg.innerText = "Errore di connessione con il server.";
+      } finally {
         saveBtn.disabled = false;
       }
     }
