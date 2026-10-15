@@ -35,7 +35,6 @@
 
   <!-- Dashboard Redazione -->
   <div id="dashboardScreen" class="hidden">
-    <!-- Navbar -->
     <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
       <div class="flex items-center space-x-3">
         <span class="font-bold text-lg text-slate-900">Ermes UMG</span>
@@ -47,7 +46,6 @@
       </div>
     </nav>
 
-    <!-- Area Editor -->
     <main class="max-w-4xl mx-auto my-8 p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
       <h2 class="text-xl font-bold text-slate-900 mb-4">Nuovo Articolo</h2>
       
@@ -57,7 +55,6 @@
           <input type="text" id="postTitle" placeholder="Inserisci il titolo..." class="w-full text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
         </div>
 
-        <!-- Categorie dinamiche da Blogger, Autore e Co-Autori -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoria / Tag Principale</label>
@@ -75,7 +72,7 @@
             <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
             <select id="coAuthorsSelect" multiple class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm h-24">
             </select>
-            <p class="text-[10px] text-slate-400 mt-1">Tieni premuto CTRL / CMD per Selezionare più autori.</p>
+            <p class="text-[10px] text-slate-400 mt-1">Tieni premuto CTRL / CMD per selezionare più autori.</p>
           </div>
         </div>
 
@@ -84,7 +81,6 @@
           <div id="editor" class="h-80 bg-white"></div>
         </div>
 
-        <!-- Bar Azioni -->
         <div class="flex items-center justify-between pt-4 border-t border-slate-100">
           <span id="statusMessage" class="text-sm font-medium"></span>
           <button id="saveBtn" onclick="saveDraft()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-sm transition flex items-center space-x-2">
@@ -98,7 +94,6 @@
   <script>
     const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
 
-    // Database Completo degli Autori e Link ufficiali
     const users = {
       "alessia.screnci": { pass: "pass123", name: "Alessia Screnci", link: "https://www.ermes-umg.it/p/alessia-screnci.html" },
       "elisabeth.rosano": { pass: "pass123", name: "Elisabeth Rosanò", link: "https://www.ermes-umg.it/p/elisabeth-rosano.html" },
@@ -122,7 +117,6 @@
 
     let currentUser = null;
 
-    // Inizializzazione Editor Quill.js
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -136,19 +130,17 @@
       }
     });
 
-    // Recupera in tempo reale tutti i tag esistenti da Blogger
     async function loadBloggerTags() {
       const select = document.getElementById("postCategory");
       try {
         const res = await fetch(WORKER_URL);
         const data = await res.json();
-        
         select.innerHTML = "";
         
         if (data.labels && data.labels.length > 0) {
+          const authorNames = Object.values(users).map(u => u.name.toLowerCase());
           data.labels.forEach(tag => {
-            // Escludiamo le etichette autore dal menu delle categorie
-            if (!tag.startsWith("Autore:")) {
+            if (!tag.startsWith("Autore:") && !authorNames.includes(tag.toLowerCase())) {
               const opt = document.createElement("option");
               opt.value = tag;
               opt.innerText = tag;
@@ -163,7 +155,6 @@
       }
     }
 
-    // Login logic
     document.getElementById("loginForm").addEventListener("submit", function(e) {
       e.preventDefault();
       const u = document.getElementById("username").value.trim().toLowerCase();
@@ -187,7 +178,6 @@
     function populateCoAuthorsList() {
       const coAuthorsSelect = document.getElementById("coAuthorsSelect");
       coAuthorsSelect.innerHTML = "";
-      
       Object.keys(users).forEach(key => {
         if (users[key].name !== currentUser.name) {
           const opt = document.createElement("option");
@@ -206,7 +196,6 @@
       document.getElementById("password").value = "";
     }
 
-    // Invio articolo a Blogger
     async function saveDraft() {
       const title = document.getElementById("postTitle").value.trim();
       let rawContent = quill.root.innerHTML;
@@ -220,20 +209,16 @@
         return;
       }
 
-      // Recuperiamo i co-autori selezionati
       const coAuthorsSelect = document.getElementById("coAuthorsSelect");
       const selectedCoAuthorKeys = Array.from(coAuthorsSelect.selectedOptions).map(opt => opt.value);
 
-      // Creazione dicitura ipertestuale "Scritto da..."
       let byline = `<p><em><strong>Scritto da <a href="${currentUser.link}" target="_blank">${currentUser.name}</a></strong>`;
-      
-      const labels = [category, currentUser.name, "Autore: " + currentUser.name];
+      const labels = [category, currentUser.name];
 
       if (selectedCoAuthorKeys.length > 0) {
         const coAuthorsLinks = selectedCoAuthorKeys.map(key => {
           const coAuthor = users[key];
           labels.push(coAuthor.name);
-          labels.push("Autore: " + coAuthor.name);
           return `<a href="${coAuthor.link}" target="_blank">${coAuthor.name}</a>`;
         });
         byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
