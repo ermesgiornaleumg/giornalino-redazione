@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- IMPEDISCE L'INDICIZZAZIONE SUI MOTORI DI RICERCA -->
+  <!-- NO-INDEX PER EVITARE L'INDICIZZAZIONE SUI MOTORI DI RICERCA -->
   <meta name="robots" content="noindex, nofollow">
   
   <title>Pannello Redazione - Ermes UMG</title>
@@ -100,11 +100,17 @@
 
       <!-- AREA EDITOR ARTICOLO -->
       <main class="max-w-4xl mx-auto my-4 sm:my-8 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
           <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
-          <button onclick="loadLastAuthorDraft()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border font-medium transition">
-            📂 Ripristina Ultima Bozza Locale
-          </button>
+          
+          <div class="flex gap-2">
+            <button onclick="saveCloudDraft(true)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border font-medium transition flex items-center gap-1">
+              ☁️ Salva Bozza Cloud
+            </button>
+            <button onclick="loadCloudDraft()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-200 font-medium transition flex items-center gap-1">
+              📂 Ripristina da Cloud
+            </button>
+          </div>
         </div>
         
         <div class="space-y-4">
@@ -138,6 +144,7 @@
             <div id="editor" class="h-64 sm:h-80 bg-white"></div>
           </div>
 
+          <!-- Bar Azioni -->
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
             <span id="statusMessage" class="text-sm font-medium text-center sm:text-left"></span>
             <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-sm transition flex items-center justify-center space-x-2">
@@ -206,6 +213,9 @@
 
         populateCoAuthorsCheckboxes();
         loadBloggerTags();
+        
+        // Controlla se è presente una bozza cloud salvata per questo autore
+        checkAndNotifyCloudDraft();
       } else {
         document.getElementById("loginError").classList.remove("hidden");
       }
@@ -416,25 +426,88 @@
       } catch(e) {}
     }
 
-    // Salva bozza locale per autore
-    function saveAuthorDraftLocally(title, content) {
+    // SALVATAGGIO BOZZA CLOUD PER AUTORE
+    async function saveCloudDraft(showAlert = false) {
       if (!currentUser) return;
-      const draftData = { title, content, date: new Date().toISOString() };
-      localStorage.setItem(`draft_${currentUser.key}`, JSON.stringify(draftData));
+      const title = document.getElementById("postTitle").value.trim();
+      const content = quill.root.innerHTML;
+      
+      if (!title && quill.getText().trim().length === 0) {
+        if (showAlert) alert("Inserisci del testo o un titolo prima di salvare la bozza!");
+        return;
+      }
+
+      const statusMsg = document.getElementById("statusMessage");
+      statusMsg.className = "text-sm font-medium text-blue-600";
+      statusMsg.innerText = "Salvataggio bozza cloud in corso...";
+
+      const draftData = {
+        title,
+        content,
+        date: new Date().toLocaleString("it-IT")
+      };
+
+      try {
+        const res = await fetch(`${WORKER_URL}drafts?author=${currentUser.key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ draft: draftData })
+        });
+
+        if (res.ok) {
+          statusMsg.className = "text-sm font-medium text-emerald-600";
+          statusMsg.innerText = `✓ Bozza salvata nel cloud alle ${draftData.date}`;
+          if (showAlert) alert("✓ Bozza salvata nel cloud con successo!");
+        } else {
+          statusMsg.className = "text-sm font-medium text-red-600";
+          statusMsg.innerText = "Errore durante il salvataggio della bozza cloud.";
+        }
+      } catch(e) {
+        statusMsg.className = "text-sm font-medium text-red-600";
+        statusMsg.innerText = "Errore di connessione durante il salvataggio della bozza.";
+      }
     }
 
-    // Ripristina ultima bozza salvata
-    function loadLastAuthorDraft() {
+    // CARICAMENTO BOZZA CLOUD PER AUTORE
+    async function loadCloudDraft() {
       if (!currentUser) return;
-      const saved = localStorage.getItem(`draft_${currentUser.key}`);
-      if (saved) {
-        const data = JSON.parse(saved);
-        document.getElementById("postTitle").value = data.title || "";
-        quill.clipboard.dangerouslyPasteHTML(data.content || "");
-        alert("✓ Bozza ripristinata con successo!");
-      } else {
-        alert("Nessuna bozza locale trovata per questo autore.");
+      const statusMsg = document.getElementById("statusMessage");
+      statusMsg.className = "text-sm font-medium text-blue-600";
+      statusMsg.innerText = "Recupero bozza cloud in corso...";
+
+      try {
+        const res = await fetch(`${WORKER_URL}drafts?author=${currentUser.key}`);
+        const data = await res.json();
+
+        if (data.draft) {
+          document.getElementById("postTitle").value = data.draft.title || "";
+          quill.clipboard.dangerouslyPasteHTML(data.draft.content || "");
+          
+          statusMsg.className = "text-sm font-medium text-emerald-600";
+          statusMsg.innerText = `✓ Bozza ripristinata (salvata il ${data.draft.date})`;
+          alert("✓ Bozza ripristinata con successo!");
+        } else {
+          statusMsg.className = "text-sm font-medium text-slate-500";
+          statusMsg.innerText = "Nessuna bozza salvata trovata nel cloud.";
+          alert("Nessuna bozza salvata trovata nel cloud per il tuo account.");
+        }
+      } catch(e) {
+        statusMsg.className = "text-sm font-medium text-red-600";
+        statusMsg.innerText = "Errore di connessione nel recupero della bozza.";
       }
+    }
+
+    async function checkAndNotifyCloudDraft() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${WORKER_URL}drafts?author=${currentUser.key}`);
+        const data = await res.json();
+        if (data.draft && (data.draft.title || data.draft.content)) {
+          const statusMsg = document.getElementById("statusMessage");
+          statusMsg.className = "text-sm font-medium text-blue-600";
+          statusMsg.innerText = `ℹ️ Hai una bozza cloud del ${data.draft.date}. Clicca "Ripristina da Cloud" per ricaricarla.`;
+        }
+      } catch(e) {}
     }
 
     function logout() {
@@ -457,8 +530,8 @@
         return;
       }
 
-      // Salva bozza locale dell'autore
-      saveAuthorDraftLocally(title, rawContent);
+      // Salva preventivamente la bozza nel Cloud
+      await saveCloudDraft(false);
 
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
