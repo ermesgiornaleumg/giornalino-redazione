@@ -14,19 +14,36 @@
 
   <!-- Modal Pop-up Comunicati -->
   <div id="announcementModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4 animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
         <h3 class="text-lg font-bold text-blue-600 flex items-center gap-2">
           📢 Comunicato dalla Caporedazione
         </h3>
         <span id="announcementDate" class="text-xs text-slate-400 font-medium"></span>
       </div>
-      <div id="announcementContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2">
-      </div>
+      <div id="announcementContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2"></div>
       <div class="text-right pt-2 border-t">
         <button onclick="closeAnnouncementModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">
           Ho Capito
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lettura Bozza per Caporedattore -->
+  <div id="viewDraftModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 text-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 id="draftModalTitle" class="text-lg font-bold text-slate-900"></h3>
+          <p id="draftModalAuthor" class="text-xs text-blue-600 font-medium mt-0.5"></p>
+        </div>
+        <button onclick="closeDraftModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      </div>
+      <div id="draftModalBody" class="text-sm text-slate-700 leading-relaxed space-y-3 py-2 border-b"></div>
+      <div class="flex justify-between items-center pt-2">
+        <button onclick="deleteCurrentDraft()" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg transition">Elimina Bozza</button>
+        <button onclick="publishCurrentDraftToBlogger()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">Approva & Invia a Blogger</button>
       </div>
     </div>
   </div>
@@ -85,7 +102,7 @@
           <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
             ✍️ Scrittura Articolo
           </button>
-          <button id="tabAdminBtn" onclick="switchTab('admin')" class="hidden py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent items-center gap-2 transition">
+          <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
             ⚙️ Gestione & Ruoli
           </button>
         </div>
@@ -135,49 +152,78 @@
       </div>
 
       <!-- SCHEDA 2: AREA EDITOR ARTICOLO -->
-      <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
-          <span id="autoSaveIndicator" class="text-xs text-slate-400 italic">Salvataggio automatico attivo</span>
-        </div>
+      <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200 space-y-6">
         
-        <div class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Titolo dell'articolo</label>
-            <input type="text" id="postTitle" oninput="triggerAutoSave()" placeholder="Inserisci il titolo..." class="w-full text-base sm:text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+        <!-- SEZIONE BOZZE IN REVISIONE (SOLO CAPOREDATTORE & ADMIN) -->
+        <div id="sharedDraftsSection" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+            📋 Bozze Inviate dai Redattori per Revisione
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+              <thead class="bg-amber-100/60 uppercase text-[10px] text-amber-800">
+                <tr>
+                  <th class="p-2">Autore</th>
+                  <th class="p-2">Titolo Bozza</th>
+                  <th class="p-2">Data Invio</th>
+                  <th class="p-2">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="sharedDraftsTable" class="divide-y divide-amber-200/50">
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
+            <span id="autoSaveIndicator" class="text-xs text-slate-400 italic">Salvataggio automatico attivo</span>
+          </div>
+          
+          <div class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoria / Tag Principale</label>
-              <select id="postCategory" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
-                <option value="">Caricamento tag in corso...</option>
-              </select>
+              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Titolo dell'articolo</label>
+              <input type="text" id="postTitle" oninput="triggerAutoSave()" placeholder="Inserisci il titolo..." class="w-full text-base sm:text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Autore Principale</label>
-              <input type="text" id="authorTagDisplay" disabled class="w-full px-3 py-2 border rounded-lg bg-slate-50 text-slate-500 font-medium cursor-not-allowed text-sm">
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoria / Tag Principale</label>
+                <select id="postCategory" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                  <option value="">Caricamento tag in corso...</option>
+                </select>
+              </div>
 
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
-              <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Autore Principale</label>
+                <input type="text" id="authorTagDisplay" disabled class="w-full px-3 py-2 border rounded-lg bg-slate-50 text-slate-500 font-medium cursor-not-allowed text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
+                <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs">
+                </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Contenuto dell'articolo</label>
-            <div id="editor" class="h-64 sm:h-80 bg-white"></div>
-          </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Contenuto dell'articolo</label>
+              <div id="editor" class="h-64 sm:h-80 bg-white"></div>
+            </div>
 
-          <!-- Bar Azioni -->
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
-            <span id="statusMessage" class="text-sm font-medium text-center sm:text-left"></span>
-            <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-sm transition flex items-center justify-center space-x-2">
-              <span>Invia in Bozza su Blogger</span>
-            </button>
+            <!-- Bar Azioni -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
+              <span id="statusMessage" class="text-sm font-medium text-center sm:text-left"></span>
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="sendDraftToHeadEditor()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">
+                  📤 Invia in Revisione al Caporedattore
+                </button>
+                <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">
+                  🚀 Pubblica Bozza su Blogger
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -185,62 +231,71 @@
       <!-- SCHEDA 3: PANNELLO ADMIN & CAPOREDATTORE -->
       <div id="tabAdmin" class="hidden max-w-4xl mx-auto my-6 space-y-6 px-4">
         
-        <!-- SEZIONE INVIO COMUNICATI (Per Admin e Caporedattori) -->
-        <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
-            📢 Pubblica Avviso / Comunicato Interno
-          </h3>
-          <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
-
-          <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
-          <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
-            Invia Avviso alla Redazione
-          </button>
+        <!-- MESSAGGIO SEZIONE NON ACCESSIBILE PER I REDATTORI -->
+        <div id="nonAccessibleNotice" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
+          <div class="text-4xl mb-3">🔒</div>
+          <h3 class="text-lg font-bold text-slate-800">Sezione non accessibile ai Redattori</h3>
+          <p class="text-xs text-slate-500 mt-1">Questa pagina è riservata esclusivamente ai Caporedattori e agli Amministratori per la gestione interna della redazione.</p>
         </div>
 
-        <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
-        <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
-          <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
-            ⚙️ Pannello Amministrazione Autori e Ruoli
-          </h3>
+        <div id="adminContentArea" class="space-y-6">
+          <!-- SEZIONE INVIO COMUNICATI (Per Admin e Caporedattori) -->
+          <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+              📢 Pubblica Avviso / Comunicato Interno
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
 
-          <!-- Form Nuovo Autore -->
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
-            <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
-            <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
-            <input type="text" id="newLink" placeholder="Link Pagina Autore" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
-            
-            <div class="flex gap-1">
-              <input type="text" id="newPass" placeholder="Password" class="w-full px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none font-mono">
-              <button onclick="generatePassword()" class="bg-slate-600 hover:bg-slate-500 text-xs px-2 py-2 rounded font-semibold transition">🔑</button>
-            </div>
-
-            <select id="newRole" class="px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none">
-              <option value="author">Redattore</option>
-              <option value="head_editor">Caporedattore</option>
-              <option value="admin">Amministratore</option>
-            </select>
-            
-            <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
-              + Aggiungi Nuovo Utente
+            <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
+            <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+              Invia Avviso alla Redazione
             </button>
           </div>
 
-          <!-- Lista Autori Esistenti -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
-              <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
-                <tr>
-                  <th class="p-2">Username</th>
-                  <th class="p-2">Nome Completo</th>
-                  <th class="p-2">Ruolo</th>
-                  <th class="p-2">Password</th>
-                  <th class="p-2">Azione</th>
-                </tr>
-              </thead>
-              <tbody id="adminUsersTable" class="divide-y divide-slate-800">
-              </tbody>
-            </table>
+          <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
+          <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
+            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+              ⚙️ Pannello Amministrazione Autori e Ruoli
+            </h3>
+
+            <!-- Form Nuovo Autore -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
+              <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+              <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+              <input type="text" id="newLink" placeholder="Link Pagina Autore" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+              
+              <div class="flex gap-1">
+                <input type="text" id="newPass" placeholder="Password" class="w-full px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none font-mono">
+                <button onclick="generatePassword()" class="bg-slate-600 hover:bg-slate-500 text-xs px-2 py-2 rounded font-semibold transition">🔑</button>
+              </div>
+
+              <select id="newRole" class="px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none">
+                <option value="author">Redattore</option>
+                <option value="head_editor">Caporedattore</option>
+                <option value="admin">Amministratore</option>
+              </select>
+              
+              <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
+                + Aggiungi Nuovo Utente
+              </button>
+            </div>
+
+            <!-- Lista Autori Esistenti -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
+                  <tr>
+                    <th class="p-2">Username</th>
+                    <th class="p-2">Nome Completo</th>
+                    <th class="p-2">Ruolo</th>
+                    <th class="p-2">Password</th>
+                    <th class="p-2">Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTable" class="divide-y divide-slate-800">
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -256,6 +311,8 @@
     const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
     let users = {};
     let calendarEvents = [];
+    let sharedDrafts = [];
+    let selectedDraftIndex = null;
     let currentUser = null;
 
     const quill = new Quill('#editor', {
@@ -282,9 +339,7 @@
       try {
         const res = await fetch(WORKER_URL + "users");
         const data = await res.json();
-        if (data.users) {
-          users = data.users;
-        }
+        if (data.users) users = data.users;
       } catch(e) { console.error("Errore recupero utenti", e); }
     }
     fetchUsers();
@@ -310,10 +365,10 @@
         const roleLabel = currentUser.role === "admin" ? "Amministratore" : (currentUser.role === "head_editor" ? "Caporedattore" : "Redattore");
         document.getElementById("roleBadge").innerText = roleLabel;
 
-        // Permessi Visualizzazione
+        // Permessi Visualizzazione Pannello Admin
         if (currentUser.role === "admin" || currentUser.role === "head_editor") {
-          document.getElementById("tabAdminBtn").classList.remove("hidden");
-          document.getElementById("tabAdminBtn").classList.add("flex");
+          document.getElementById("nonAccessibleNotice").classList.add("hidden");
+          document.getElementById("adminContentArea").classList.remove("hidden");
           
           if (currentUser.role === "admin") {
             document.getElementById("adminPanel").classList.remove("hidden");
@@ -321,6 +376,13 @@
           } else {
             document.getElementById("adminPanel").classList.add("hidden");
           }
+
+          document.getElementById("sharedDraftsSection").classList.remove("hidden");
+          loadSharedDrafts();
+        } else {
+          document.getElementById("nonAccessibleNotice").classList.remove("hidden");
+          document.getElementById("adminContentArea").classList.add("hidden");
+          document.getElementById("sharedDraftsSection").classList.add("hidden");
         }
 
         populateCoAuthorsCheckboxes();
@@ -352,6 +414,159 @@
       } else if (tabName === 'admin') {
         document.getElementById("tabAdmin").classList.remove("hidden");
         document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      }
+    }
+
+    // BOZZE CONDIVISE CON CAPOREDATTORE
+    async function loadSharedDrafts() {
+      try {
+        const res = await fetch(WORKER_URL + "drafts");
+        const data = await res.json();
+        sharedDrafts = data.drafts || [];
+        renderSharedDraftsTable();
+      } catch(e) {}
+    }
+
+    async function sendDraftToHeadEditor() {
+      const title = document.getElementById("postTitle").value.trim();
+      const content = quill.root.innerHTML;
+      const category = document.getElementById("postCategory").value;
+
+      if (!title || quill.getText().trim().length === 0) {
+        alert("Inserisci sia il titolo che il testo prima di inviare la bozza!");
+        return;
+      }
+
+      const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
+      const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
+
+      const newDraft = {
+        id: Date.now(),
+        title,
+        content,
+        category,
+        author: currentUser.name,
+        authorLink: currentUser.link,
+        coAuthorKeys: selectedCoAuthorKeys,
+        date: new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'})
+      };
+
+      await loadSharedDrafts();
+      sharedDrafts.push(newDraft);
+
+      await fetch(WORKER_URL + "drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drafts: sharedDrafts })
+      });
+
+      localStorage.removeItem(`auto_draft_${currentUser.key}`);
+      document.getElementById("postTitle").value = "";
+      quill.setContents([]);
+      document.querySelectorAll('.coauthor-checkbox').forEach(cb => cb.checked = false);
+
+      alert("✓ Bozza inviata con successo al Caporedattore per la revisione!");
+    }
+
+    function renderSharedDraftsTable() {
+      const tbody = document.getElementById("sharedDraftsTable");
+      tbody.innerHTML = "";
+      if (sharedDrafts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Nessuna bozza in attesa di revisione.</td></tr>`;
+        return;
+      }
+
+      sharedDrafts.forEach((draft, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-amber-100/40 transition border-b border-amber-200/50";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-amber-900">${draft.author}</td>
+          <td class="p-2 font-medium">${draft.title}</td>
+          <td class="p-2 text-[10px] text-slate-500">${draft.date}</td>
+          <td class="p-2">
+            <button onclick="openDraftModal(${idx})" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Leggi & Leggi</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openDraftModal(index) {
+      selectedDraftIndex = index;
+      const draft = sharedDrafts[index];
+      document.getElementById("draftModalTitle").innerText = draft.title;
+      document.getElementById("draftModalAuthor").innerText = "Scritto da: " + draft.author + " (" + draft.date + ")";
+      document.getElementById("draftModalBody").innerHTML = draft.content;
+      document.getElementById("viewDraftModal").classList.remove("hidden");
+    }
+
+    function closeDraftModal() {
+      document.getElementById("viewDraftModal").classList.add("hidden");
+      selectedDraftIndex = null;
+    }
+
+    async function deleteCurrentDraft() {
+      if (selectedDraftIndex !== null && confirm("Sei sicuro di voler eliminare questa bozza?")) {
+        sharedDrafts.splice(selectedDraftIndex, 1);
+        await fetch(WORKER_URL + "drafts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ drafts: sharedDrafts })
+        });
+        closeDraftModal();
+        renderSharedDraftsTable();
+      }
+    }
+
+    async function publishCurrentDraftToBlogger() {
+      if (selectedDraftIndex === null) return;
+      const draft = sharedDrafts[selectedDraftIndex];
+
+      let byline = `<p><em><strong>Scritto da <a href="${draft.authorLink}" target="_blank">${draft.author}</a></strong>`;
+      const labels = [draft.category || "Generale", draft.author];
+
+      if (draft.coAuthorKeys && draft.coAuthorKeys.length > 0) {
+        const coAuthorsLinks = draft.coAuthorKeys.map(key => {
+          const coAuthor = users[key];
+          if (coAuthor) {
+            labels.push(coAuthor.name);
+            return `<a href="${coAuthor.link}" target="_blank">${coAuthor.name}</a>`;
+          }
+          return '';
+        }).filter(l => l !== '');
+        
+        if (coAuthorsLinks.length > 0) {
+          byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
+        }
+      }
+      
+      byline += `</em></p><hr><br>`;
+      const finalContent = byline + draft.content;
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: draft.title, content: finalContent, labels })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert("✓ Bozza approvata e inviata con successo su Blogger!");
+          sharedDrafts.splice(selectedDraftIndex, 1);
+          await fetch(WORKER_URL + "drafts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ drafts: sharedDrafts })
+          });
+          closeDraftModal();
+          renderSharedDraftsTable();
+        } else {
+          alert("Errore invio Blogger: " + (result.error || "Impossibile salvare."));
+        }
+      } catch(e) {
+        alert("Errore di connessione con il server.");
       }
     }
 
@@ -409,374 +624,4 @@
         tr.innerHTML = `
           <td class="p-2 font-semibold text-blue-600">${item.date}</td>
           <td class="p-2 font-medium text-slate-800">${item.title}</td>
-          <td class="p-2">${item.author}</td>
-          <td class="p-2"><span class="bg-slate-100 px-2 py-0.5 rounded text-[10px] border font-medium">${item.status}</span></td>
-          <td class="p-2">
-            ${(item.authorKey === currentUser.key || currentUser.role === 'admin' || currentUser.role === 'head_editor') ? `<button onclick="deleteCalendarEvent(${item.id})" class="text-red-500 hover:text-red-700 text-[10px] font-bold">Rimuovi</button>` : ''}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // ANUNCIOS / COMUNICATI
-    async function publishAnnouncement() {
-      const text = document.getElementById("announcementText").value.trim();
-      if (!text) return alert("Inserisci un testo per l'avviso!");
-
-      const announcement = { text, date: new Date().toLocaleDateString('it-IT') };
-
-      await fetch(WORKER_URL + "announcements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ announcement })
-      });
-
-      document.getElementById("announcementText").value = "";
-      alert("✓ Avviso pubblicato con successo per tutta la redazione!");
-    }
-
-    async function checkAnnouncements() {
-      try {
-        const res = await fetch(WORKER_URL + "announcements");
-        const data = await res.json();
-        if (data.announcement) {
-          const lastSeen = localStorage.getItem(`seen_announcement_${currentUser.key}`);
-          if (lastSeen !== data.announcement.text) {
-            document.getElementById("announcementContent").innerText = data.announcement.text;
-            document.getElementById("announcementDate").innerText = "Pubblicato il: " + data.announcement.date;
-            document.getElementById("announcementModal").classList.remove("hidden");
-          }
-        }
-      } catch(e) {}
-    }
-
-    function closeAnnouncementModal() {
-      const text = document.getElementById("announcementContent").innerText;
-      localStorage.setItem(`seen_announcement_${currentUser.key}`, text);
-      document.getElementById("announcementModal").classList.add("hidden");
-    }
-
-    // CAMBIO PASSWORD UTENTE
-    async function changeOwnPassword() {
-      const newPass = prompt("Inserisci la tua nuova password:");
-      if (newPass && newPass.trim().length > 0) {
-        users[currentUser.key].pass = newPass.trim();
-        currentUser.pass = newPass.trim();
-
-        await fetch(WORKER_URL + "users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ users })
-        });
-
-        alert("✓ La tua password è stata aggiornata con successo!");
-      }
-    }
-
-    // AMMINISTRAZIONE UTENTI
-    async function addNewUser() {
-      const uKey = document.getElementById("newUsername").value.trim().toLowerCase();
-      const name = document.getElementById("newName").value.trim();
-      const link = document.getElementById("newLink").value.trim();
-      const pass = document.getElementById("newPass").value.trim();
-      const role = document.getElementById("newRole").value;
-
-      if (!uKey || !name || !pass) return alert("Compila i campi obbligatori!");
-
-      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role };
-
-      await fetch(WORKER_URL + "users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ users })
-      });
-
-      renderAdminUsers();
-      populateCoAuthorsCheckboxes();
-      alert("✓ Nuovo utente registrato!");
-    }
-
-    async function updateUserRoleOrPass(key) {
-      const passVal = document.getElementById(`passInput_${key}`).value.trim();
-      const roleVal = document.getElementById(`roleSelect_${key}`).value;
-
-      if (!passVal) return alert("La password non può essere vuota!");
-
-      users[key].pass = passVal;
-      users[key].role = roleVal;
-
-      await fetch(WORKER_URL + "users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ users })
-      });
-
-      alert(`✓ Dati per l'utente "${users[key].name}" aggiornati!`);
-    }
-
-    async function deleteUser(key) {
-      if (confirm(`Sei sicuro di voler eliminare ${users[key].name}?`)) {
-        delete users[key];
-        await fetch(WORKER_URL + "users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ users })
-        });
-        renderAdminUsers();
-      }
-    }
-
-    function renderAdminUsers() {
-      const table = document.getElementById("adminUsersTable");
-      table.innerHTML = "";
-      Object.keys(users).forEach(key => {
-        const u = users[key];
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-slate-800 transition";
-        tr.innerHTML = `
-          <td class="p-2 font-semibold text-blue-300">${key}</td>
-          <td class="p-2">${u.name}</td>
-          <td class="p-2">
-            <select id="roleSelect_${key}" class="bg-slate-700 text-white font-sans text-xs px-2 py-1 rounded border border-slate-600">
-              <option value="author" ${u.role === 'author' ? 'selected' : ''}>Redattore</option>
-              <option value="head_editor" ${u.role === 'head_editor' ? 'selected' : ''}>Caporedattore</option>
-              <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Amministratore</option>
-            </select>
-          </td>
-          <td class="p-2">
-            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 w-32">
-          </td>
-          <td class="p-2 flex items-center gap-1">
-            <button onclick="updateUserRoleOrPass('${key}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold">Salva</button>
-            ${key !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : ''}
-          </td>
-        `;
-        table.appendChild(tr);
-      });
-    }
-
-    function generatePassword() {
-      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
-      let pass = "";
-      for (let i = 0; i < 10; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
-      document.getElementById("newPass").value = pass;
-    }
-
-    // EDITOR & DRAFT AUTOSAVE
-    function triggerAutoSave() {
-      if (!currentUser) return;
-      const title = document.getElementById("postTitle").value.trim();
-      const content = quill.root.innerHTML;
-
-      if (title.length > 0 || quill.getText().trim().length > 0) {
-        const draft = { title, content, updated: new Date().toLocaleTimeString() };
-        localStorage.setItem(`auto_draft_${currentUser.key}`, JSON.stringify(draft));
-        document.getElementById("autoSaveIndicator").innerText = `Bozza salvata alle ${draft.updated}`;
-      }
-    }
-
-    function checkUnsavedDraft() {
-      const saved = localStorage.getItem(`auto_draft_${currentUser.key}`);
-      if (saved) {
-        const draft = JSON.parse(saved);
-        if (draft.title || (draft.content && draft.content !== '<p><br></p>')) {
-          setTimeout(() => {
-            if (confirm("Hai una bozza salvata non inviata. Vuoi continuare a modificarla?")) {
-              switchTab('editor');
-              document.getElementById("postTitle").value = draft.title || "";
-              quill.clipboard.dangerouslyPasteHTML(draft.content || "");
-              document.getElementById("autoSaveIndicator").innerText = `Bozza ripristinata (${draft.updated})`;
-            } else {
-              localStorage.removeItem(`auto_draft_${currentUser.key}`);
-            }
-          }, 300);
-        }
-      }
-    }
-
-    function populateCoAuthorsCheckboxes() {
-      const container = document.getElementById("coAuthorsList");
-      container.innerHTML = "";
-      Object.keys(users).forEach(key => {
-        if (users[key].name !== currentUser.name && users[key].role !== "admin") {
-          const label = document.createElement("label");
-          label.className = "flex items-center space-x-2 text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded transition";
-          
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.value = key;
-          checkbox.className = "coauthor-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4";
-
-          const span = document.createElement("span");
-          span.innerText = users[key].name;
-
-          label.appendChild(checkbox);
-          label.appendChild(span);
-          container.appendChild(label);
-        }
-      });
-    }
-
-    function imageHandler() {
-      const input = document.createElement('input');
-      input.setAttribute('type', 'file');
-      input.setAttribute('accept', 'image/*');
-      input.click();
-
-      input.onchange = async () => {
-        const file = input.files[0];
-        if (file) {
-          const statusMsg = document.getElementById("statusMessage");
-          statusMsg.className = "text-sm font-medium text-blue-600 animate-pulse";
-          statusMsg.innerText = "Ottimizzazione e caricamento immagine in corso...";
-
-          const compressedBase64 = await compressImage(file, 1200, 0.8);
-
-          try {
-            const res = await fetch(WORKER_URL + "upload-image", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ image: compressedBase64 })
-            });
-            const data = await res.json();
-            if (data.link) {
-              const range = quill.getSelection(true);
-              quill.insertEmbed(range.index, 'image', data.link);
-              statusMsg.className = "text-sm font-medium text-emerald-600";
-              statusMsg.innerText = "✓ Immagine caricata con successo!";
-            } else {
-              statusMsg.className = "text-sm font-medium text-red-600";
-              statusMsg.innerText = "Errore durante il caricamento dell'immagine.";
-            }
-          } catch(e) {
-            statusMsg.className = "text-sm font-medium text-red-600";
-            statusMsg.innerText = "Errore di connessione durante il caricamento foto.";
-          }
-        }
-      };
-    }
-
-    function compressImage(file, maxWidth, quality) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            resolve(canvas.toDataURL('image/jpeg', quality));
-          };
-        };
-      });
-    }
-
-    async function loadBloggerTags() {
-      const select = document.getElementById("postCategory");
-      try {
-        const res = await fetch(WORKER_URL);
-        const data = await res.json();
-        select.innerHTML = "";
-        
-        if (data.labels && data.labels.length > 0) {
-          const authorNames = Object.values(users).map(u => u.name.toLowerCase());
-          data.labels.forEach(tag => {
-            if (!tag.startsWith("Autore:") && !authorNames.includes(tag.toLowerCase())) {
-              const opt = document.createElement("option");
-              opt.value = tag;
-              opt.innerText = tag;
-              select.appendChild(opt);
-            }
-          });
-        }
-      } catch(e) {}
-    }
-
-    function logout() {
-      currentUser = null;
-      document.getElementById("loginScreen").classList.remove("hidden");
-      document.getElementById("dashboardScreen").classList.add("hidden");
-    }
-
-    async function saveDraft() {
-      const title = document.getElementById("postTitle").value.trim();
-      let rawContent = quill.root.innerHTML;
-      const category = document.getElementById("postCategory").value;
-      const statusMsg = document.getElementById("statusMessage");
-      const saveBtn = document.getElementById("saveBtn");
-
-      if (!title || quill.getText().trim().length === 0) {
-        statusMsg.className = "text-sm font-medium text-amber-600";
-        statusMsg.innerText = "Inserisci sia il titolo che il testo prima di inviare.";
-        return;
-      }
-
-      const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
-      const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
-
-      let byline = `<p><em><strong>Scritto da <a href="${currentUser.link}" target="_blank">${currentUser.name}</a></strong>`;
-      const labels = [category, currentUser.name];
-
-      if (selectedCoAuthorKeys.length > 0) {
-        const coAuthorsLinks = selectedCoAuthorKeys.map(key => {
-          const coAuthor = users[key];
-          labels.push(coAuthor.name);
-          return `<a href="${coAuthor.link}" target="_blank">${coAuthor.name}</a>`;
-        });
-        byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
-      }
-      
-      byline += `</em></p><hr><br>`;
-
-      const finalContent = byline + rawContent;
-
-      statusMsg.className = "text-sm font-medium text-blue-600";
-      statusMsg.innerText = "Invio della bozza in corso...";
-      saveBtn.disabled = true;
-
-      try {
-        const response = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content: finalContent, labels })
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-          statusMsg.className = "text-sm font-medium text-emerald-600";
-          statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
-          
-          localStorage.removeItem(`auto_draft_${currentUser.key}`);
-          document.getElementById("postTitle").value = "";
-          quill.setContents([]);
-          document.querySelectorAll('.coauthor-checkbox').forEach(cb => cb.checked = false);
-          document.getElementById("autoSaveIndicator").innerText = "Salvataggio automatico attivo";
-        } else {
-          statusMsg.className = "text-sm font-medium text-red-600";
-          statusMsg.innerText = "Errore: " + (result.error || "Impossibile salvare la bozza.");
-        }
-      } catch (err) {
-        statusMsg.className = "text-sm font-medium text-red-600";
-        statusMsg.innerText = "Errore di connessione con il server.";
-      } finally {
-        saveBtn.disabled = false;
-      }
-    }
-  </script>
-</body>
-</html>
+          <td class="p-
