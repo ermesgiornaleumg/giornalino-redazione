@@ -30,7 +30,7 @@
     </div>
   </div>
 
-  <!-- Modal Lettura Bozza per Caporedattore -->
+  <!-- Modal Lettura e Modifica Bozza per Caporedattore -->
   <div id="viewDraftModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 text-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
@@ -41,9 +41,16 @@
         <button onclick="closeDraftModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
       </div>
       <div id="draftModalBody" class="text-sm text-slate-700 leading-relaxed space-y-3 py-2 border-b"></div>
-      <div class="flex justify-between items-center pt-2">
+      <div class="flex flex-wrap justify-between items-center gap-2 pt-2">
         <button onclick="deleteCurrentDraft()" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg transition">Elimina Bozza</button>
-        <button onclick="publishCurrentDraftToBlogger()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">Approva & Invia a Blogger</button>
+        <div class="flex gap-2">
+          <button onclick="editCurrentDraftInEditor()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">
+            ✏️ Modifica nell'Editor
+          </button>
+          <button onclick="publishCurrentDraftToBlogger()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">
+            Approva & Invia a Blogger
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -489,7 +496,7 @@
           <td class="p-2 font-medium">${draft.title}</td>
           <td class="p-2 text-[10px] text-slate-500">${draft.date}</td>
           <td class="p-2">
-            <button onclick="openDraftModal(${idx})" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Leggi & Leggi</button>
+            <button onclick="openDraftModal(${idx})" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Leggi & Modifica</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -508,6 +515,27 @@
     function closeDraftModal() {
       document.getElementById("viewDraftModal").classList.add("hidden");
       selectedDraftIndex = null;
+    }
+
+    function editCurrentDraftInEditor() {
+      if (selectedDraftIndex === null) return;
+      const draft = sharedDrafts[selectedDraftIndex];
+
+      // Carica i dati della bozza nell'editor
+      document.getElementById("postTitle").value = draft.title || "";
+      if (draft.category) {
+        document.getElementById("postCategory").value = draft.category;
+      }
+      quill.clipboard.dangerouslyPasteHTML(draft.content || "");
+
+      // Seleziona eventuali co-autori salvati
+      document.querySelectorAll('.coauthor-checkbox').forEach(cb => {
+        cb.checked = (draft.coAuthorKeys && draft.coAuthorKeys.includes(cb.value));
+      });
+
+      closeDraftModal();
+      switchTab('editor');
+      alert("✏️ La bozza di " + draft.author + " è stata caricata nell'editor! Puoi modificarla, inviarla nuovamente in revisione o pubblicarla direttamente.");
     }
 
     async function deleteCurrentDraft() {
