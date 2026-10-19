@@ -318,3 +318,685 @@
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
+        toolbar: {
+          container: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'image'],
+            ['clean']
+          ],
+          handlers: { image: imageHandler }
+        }
+      }
+    });
+
+    quill.on('text-change', function() {
+      triggerAutoSave();
+    });
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch(WORKER_URL + "users");
+        const data = await res.json();
+        if (data.users) users = data.users;
+      } catch(e) { console.error("Errore recupero utenti", e); }
+    }
+    fetchUsers();
+
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      document.getElementById("loginError").classList.add("hidden");
+      const btn = document.getElementById("loginBtn");
+      btn.disabled = true;
+      btn.innerText = "Verifica in corso...";
+
+      await fetchUsers();
+
+      const u = document.getElementById("username").value.trim().toLowerCase();
+      const p = document.getElementById("password").value.trim();
+
+      if (users && users[u] && users[u].pass === p) {
+        currentUser = users[u];
+        currentUser.key = u;
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("dashboardScreen").classList.remove("hidden");
+        document.getElementById("userInfo").innerText = currentUser.name;
+        document.getElementById("authorTagDisplay").value = currentUser.name;
+
+        // Configurazione Ruolo
+        const roleLabel = currentUser.role === "admin" ? "Amministratore" : (currentUser.role === "head_editor" ? "Caporedattore" : "Redattore");
+        document.getElementById("roleBadge").innerText = roleLabel;
+
+        // Permessi Visualizzazione Pannello Admin
+        if (currentUser.role === "admin" || currentUser.role === "head_editor") {
+          document.getElementById("nonAccessibleNotice").classList.add("hidden");
+          document.getElementById("adminContentArea").classList.remove("hidden");
+          
+          if (currentUser.role === "admin") {
+            document.getElementById("adminPanel").classList.remove("hidden");
+            renderAdminUsers();
+          } else {
+            document.getElementById("adminPanel").classList.add("hidden");
+          }
+
+          document.getElementById("sharedDraftsSection").classList.remove("hidden");
+          loadSharedDrafts();
+        } else {
+          document.getElementById("nonAccessibleNotice").classList.remove("hidden");
+          document.getElementById("adminContentArea").classList.add("hidden");
+          document.getElementById("sharedDraftsSection").classList.add("hidden");
+        }
+
+        populateCoAuthorsCheckboxes();
+        loadBloggerTags();
+        loadCalendarEvents();
+        checkAnnouncements();
+        checkUnsavedDraft();
+      } else {
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+      btn.disabled = false;
+      btn.innerText = "Accedi";
+    });
+
+    // SISTEMA PESTAGNE (TABS)
+    function switchTab(tabName) {
+      document.getElementById("tabCalendar").classList.add("hidden");
+      document.getElementById("tabEditor").classList.add("hidden");
+      document.getElementById("tabAdmin").classList.add("hidden");
+
+      document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+      document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+      document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+
+      if (tabName === 'calendar') {
+        document.getElementById("tabCalendar").classList.remove("hidden");
+        document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      } else if (tabName === 'editor') {
+        document.getElementById("tabEditor").classList.remove("hidden");
+        document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      } else if (tabName === 'admin') {
+        document.getElementById("tabAdmin").classList.remove("hidden");
+        document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      }
+    }
+
+    // BOZZE CONDIVISE CON CAPOREDATTORE
+    async function loadSharedDrafts() {
+      try {
+        const res = await fetch(WORKER_URL + "drafts");
+        const data = await res.json();
+        sharedDrafts = data.drafts || [];
+        renderSharedDraftsTable();
+      } catch(e) {}
+    }
+
+    async function sendDraftToHeadEditor() {
+      const title = document.getElementById("postTitle").value.trim();
+      const content = quill.root.innerHTML;
+      const category = document.getElementById("postCategory").value;
+
+      if (!title || quill.getText().trim().length === 0) {
+        alert("Inserisci sia il titolo che il testo prima di inviare la bozza!");
+        return;
+      }
+
+      const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
+      const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
+
+      const newDraft = {
+        id: Date.now(),
+        title,
+        content,
+        category,
+        author: currentUser.name,
+        authorLink: currentUser.link,
+        coAuthorKeys: selectedCoAuthorKeys,
+        date: new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'})
+      };
+
+      await loadSharedDrafts();
+      sharedDrafts.push(newDraft);
+
+      await fetch(WORKER_URL + "drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drafts: sharedDrafts })
+      });
+
+      localStorage.removeItem(`auto_draft_${currentUser.key}`);
+      document.getElementById("postTitle").value = "";
+      quill.setContents([]);
+      document.querySelectorAll('.coauthor-checkbox').forEach(cb => cb.checked = false);
+
+      alert("✓ Bozza inviata con successo al Caporedattore per la revisione!");
+    }
+
+    function renderSharedDraftsTable() {
+      const tbody = document.getElementById("sharedDraftsTable");
+      tbody.innerHTML = "";
+      if (sharedDrafts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Nessuna bozza in attesa di revisione.</td></tr>`;
+        return;
+      }
+
+      sharedDrafts.forEach((draft, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-amber-100/40 transition border-b border-amber-200/50";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-amber-900">${draft.author}</td>
+          <td class="p-2 font-medium">${draft.title}</td>
+          <td class="p-2 text-[10px] text-slate-500">${draft.date}</td>
+          <td class="p-2">
+            <button onclick="openDraftModal(${idx})" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Leggi & Leggi</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openDraftModal(index) {
+      selectedDraftIndex = index;
+      const draft = sharedDrafts[index];
+      document.getElementById("draftModalTitle").innerText = draft.title;
+      document.getElementById("draftModalAuthor").innerText = "Scritto da: " + draft.author + " (" + draft.date + ")";
+      document.getElementById("draftModalBody").innerHTML = draft.content;
+      document.getElementById("viewDraftModal").classList.remove("hidden");
+    }
+
+    function closeDraftModal() {
+      document.getElementById("viewDraftModal").classList.add("hidden");
+      selectedDraftIndex = null;
+    }
+
+    async function deleteCurrentDraft() {
+      if (selectedDraftIndex !== null && confirm("Sei sicuro di voler eliminare questa bozza?")) {
+        sharedDrafts.splice(selectedDraftIndex, 1);
+        await fetch(WORKER_URL + "drafts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ drafts: sharedDrafts })
+        });
+        closeDraftModal();
+        renderSharedDraftsTable();
+      }
+    }
+
+    async function publishCurrentDraftToBlogger() {
+      if (selectedDraftIndex === null) return;
+      const draft = sharedDrafts[selectedDraftIndex];
+
+      let byline = `<p><em><strong>Scritto da <a href="${draft.authorLink}" target="_blank">${draft.author}</a></strong>`;
+      const labels = [draft.category || "Generale", draft.author];
+
+      if (draft.coAuthorKeys && draft.coAuthorKeys.length > 0) {
+        const coAuthorsLinks = draft.coAuthorKeys.map(key => {
+          const coAuthor = users[key];
+          if (coAuthor) {
+            labels.push(coAuthor.name);
+            return `<a href="${coAuthor.link}" target="_blank">${coAuthor.name}</a>`;
+          }
+          return '';
+        }).filter(l => l !== '');
+        
+        if (coAuthorsLinks.length > 0) {
+          byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
+        }
+      }
+      
+      byline += `</em></p><hr><br>`;
+      const finalContent = byline + draft.content;
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: draft.title, content: finalContent, labels })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert("✓ Bozza approvata e inviata con successo su Blogger!");
+          sharedDrafts.splice(selectedDraftIndex, 1);
+          await fetch(WORKER_URL + "drafts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ drafts: sharedDrafts })
+          });
+          closeDraftModal();
+          renderSharedDraftsTable();
+        } else {
+          alert("Errore invio Blogger: " + (result.error || "Impossibile salvare."));
+        }
+      } catch(e) {
+        alert("Errore di connessione con il server.");
+      }
+    }
+
+    // CALENDARIO
+    async function loadCalendarEvents() {
+      try {
+        const res = await fetch(WORKER_URL + "calendar");
+        const data = await res.json();
+        calendarEvents = data.events || [];
+        renderCalendarTable();
+      } catch(e) {}
+    }
+
+    async function addCalendarEvent() {
+      const title = document.getElementById("eventTitle").value.trim();
+      const date = document.getElementById("eventDate").value;
+      const status = document.getElementById("eventStatus").value;
+
+      if (!title || !date) {
+        alert("Inserisci sia il titolo che la data!");
+        return;
+      }
+
+      calendarEvents.push({ id: Date.now(), title, date, status, author: currentUser.name, authorKey: currentUser.key });
+
+      await fetch(WORKER_URL + "calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: calendarEvents })
+      });
+
+      document.getElementById("eventTitle").value = "";
+      document.getElementById("eventDate").value = "";
+      renderCalendarTable();
+    }
+
+    async function deleteCalendarEvent(id) {
+      calendarEvents = calendarEvents.filter(e => e.id !== id);
+      await fetch(WORKER_URL + "calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: calendarEvents })
+      });
+      renderCalendarTable();
+    }
+
+    function renderCalendarTable() {
+      const tbody = document.getElementById("calendarTable");
+      tbody.innerHTML = "";
+      calendarEvents.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      calendarEvents.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-blue-600">${item.date}</td>
+          <td class="p-2 font-medium text-slate-800">${item.title}</td>
+          <td class="p-2">${item.author}</td>
+          <td class="p-2"><span class="bg-slate-100 px-2 py-0.5 rounded text-[10px] border font-medium">${item.status}</span></td>
+          <td class="p-2">
+            ${(item.authorKey === currentUser.key || currentUser.role === 'admin' || currentUser.role === 'head_editor') ? `<button onclick="deleteCalendarEvent(${item.id})" class="text-red-500 hover:text-red-700 text-[10px] font-bold">Rimuovi</button>` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ANUNCIOS / COMUNICATI
+    async function publishAnnouncement() {
+      const text = document.getElementById("announcementText").value.trim();
+      if (!text) return alert("Inserisci un testo per l'avviso!");
+
+      const announcement = { text, date: new Date().toLocaleDateString('it-IT') };
+
+      await fetch(WORKER_URL + "announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ announcement })
+      });
+
+      document.getElementById("announcementText").value = "";
+      alert("✓ Avviso pubblicato con successo per tutta la redazione!");
+    }
+
+    async function checkAnnouncements() {
+      try {
+        const res = await fetch(WORKER_URL + "announcements");
+        const data = await res.json();
+        if (data.announcement) {
+          const lastSeen = localStorage.getItem(`seen_announcement_${currentUser.key}`);
+          if (lastSeen !== data.announcement.text) {
+            document.getElementById("announcementContent").innerText = data.announcement.text;
+            document.getElementById("announcementDate").innerText = "Pubblicato il: " + data.announcement.date;
+            document.getElementById("announcementModal").classList.remove("hidden");
+          }
+        }
+      } catch(e) {}
+    }
+
+    function closeAnnouncementModal() {
+      const text = document.getElementById("announcementContent").innerText;
+      localStorage.setItem(`seen_announcement_${currentUser.key}`, text);
+      document.getElementById("announcementModal").classList.add("hidden");
+    }
+
+    // CAMBIO PASSWORD UTENTE
+    async function changeOwnPassword() {
+      const newPass = prompt("Inserisci la tua nuova password:");
+      if (newPass && newPass.trim().length > 0) {
+        users[currentUser.key].pass = newPass.trim();
+        currentUser.pass = newPass.trim();
+
+        await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+
+        alert("✓ La tua password è stata aggiornata con successo!");
+      }
+    }
+
+    // AMMINISTRAZIONE UTENTI
+    async function addNewUser() {
+      const uKey = document.getElementById("newUsername").value.trim().toLowerCase();
+      const name = document.getElementById("newName").value.trim();
+      const link = document.getElementById("newLink").value.trim();
+      const pass = document.getElementById("newPass").value.trim();
+      const role = document.getElementById("newRole").value;
+
+      if (!uKey || !name || !pass) return alert("Compila i campi obbligatori!");
+
+      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role };
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      renderAdminUsers();
+      populateCoAuthorsCheckboxes();
+      alert("✓ Nuovo utente registrato!");
+    }
+
+    async function updateUserRoleOrPass(key) {
+      const passVal = document.getElementById(`passInput_${key}`).value.trim();
+      const roleVal = document.getElementById(`roleSelect_${key}`).value;
+
+      if (!passVal) return alert("La password non può essere vuota!");
+
+      users[key].pass = passVal;
+      users[key].role = roleVal;
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      alert(`✓ Dati per l'utente "${users[key].name}" aggiornati!`);
+    }
+
+    async function deleteUser(key) {
+      if (confirm(`Sei sicuro di voler eliminare ${users[key].name}?`)) {
+        delete users[key];
+        await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+        renderAdminUsers();
+      }
+    }
+
+    function renderAdminUsers() {
+      const table = document.getElementById("adminUsersTable");
+      table.innerHTML = "";
+      Object.keys(users).forEach(key => {
+        const u = users[key];
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800 transition";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-blue-300">${key}</td>
+          <td class="p-2">${u.name}</td>
+          <td class="p-2">
+            <select id="roleSelect_${key}" class="bg-slate-700 text-white font-sans text-xs px-2 py-1 rounded border border-slate-600">
+              <option value="author" ${u.role === 'author' ? 'selected' : ''}>Redattore</option>
+              <option value="head_editor" ${u.role === 'head_editor' ? 'selected' : ''}>Caporedattore</option>
+              <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Amministratore</option>
+            </select>
+          </td>
+          <td class="p-2">
+            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 w-32">
+          </td>
+          <td class="p-2 flex items-center gap-1">
+            <button onclick="updateUserRoleOrPass('${key}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold">Salva</button>
+            ${key !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : ''}
+          </td>
+        `;
+        table.appendChild(tr);
+      });
+    }
+
+    function generatePassword() {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
+      let pass = "";
+      for (let i = 0; i < 10; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+      document.getElementById("newPass").value = pass;
+    }
+
+    // EDITOR & DRAFT AUTOSAVE
+    function triggerAutoSave() {
+      if (!currentUser) return;
+      const title = document.getElementById("postTitle").value.trim();
+      const content = quill.root.innerHTML;
+
+      if (title.length > 0 || quill.getText().trim().length > 0) {
+        const draft = { title, content, updated: new Date().toLocaleTimeString() };
+        localStorage.setItem(`auto_draft_${currentUser.key}`, JSON.stringify(draft));
+        document.getElementById("autoSaveIndicator").innerText = `Bozza salvata alle ${draft.updated}`;
+      }
+    }
+
+    function checkUnsavedDraft() {
+      const saved = localStorage.getItem(`auto_draft_${currentUser.key}`);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.title || (draft.content && draft.content !== '<p><br></p>')) {
+          setTimeout(() => {
+            if (confirm("Hai una bozza salvata non inviata. Vuoi continuare a modificarla?")) {
+              switchTab('editor');
+              document.getElementById("postTitle").value = draft.title || "";
+              quill.clipboard.dangerouslyPasteHTML(draft.content || "");
+              document.getElementById("autoSaveIndicator").innerText = `Bozza ripristinata (${draft.updated})`;
+            } else {
+              localStorage.removeItem(`auto_draft_${currentUser.key}`);
+            }
+          }, 300);
+        }
+      }
+    }
+
+    function populateCoAuthorsCheckboxes() {
+      const container = document.getElementById("coAuthorsList");
+      container.innerHTML = "";
+      Object.keys(users).forEach(key => {
+        if (users[key].name !== currentUser.name && users[key].role !== "admin") {
+          const label = document.createElement("label");
+          label.className = "flex items-center space-x-2 text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded transition";
+          
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.value = key;
+          checkbox.className = "coauthor-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4";
+
+          const span = document.createElement("span");
+          span.innerText = users[key].name;
+
+          label.appendChild(checkbox);
+          label.appendChild(span);
+          container.appendChild(label);
+        }
+      });
+    }
+
+    function imageHandler() {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
+
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (file) {
+          const statusMsg = document.getElementById("statusMessage");
+          statusMsg.className = "text-sm font-medium text-blue-600 animate-pulse";
+          statusMsg.innerText = "Ottimizzazione e caricamento immagine in corso...";
+
+          const compressedBase64 = await compressImage(file, 1200, 0.8);
+
+          try {
+            const res = await fetch(WORKER_URL + "upload-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: compressedBase64 })
+            });
+            const data = await res.json();
+            if (data.link) {
+              const range = quill.getSelection(true);
+              quill.insertEmbed(range.index, 'image', data.link);
+              statusMsg.className = "text-sm font-medium text-emerald-600";
+              statusMsg.innerText = "✓ Immagine caricata con successo!";
+            } else {
+              statusMsg.className = "text-sm font-medium text-red-600";
+              statusMsg.innerText = "Errore durante il caricamento dell'immagine.";
+            }
+          } catch(e) {
+            statusMsg.className = "text-sm font-medium text-red-600";
+            statusMsg.innerText = "Errore di connessione durante il caricamento foto.";
+          }
+        }
+      };
+    }
+
+    function compressImage(file, maxWidth, quality) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+        };
+      });
+    }
+
+    async function loadBloggerTags() {
+      const select = document.getElementById("postCategory");
+      try {
+        const res = await fetch(WORKER_URL);
+        const data = await res.json();
+        select.innerHTML = "";
+        
+        if (data.labels && data.labels.length > 0) {
+          const authorNames = Object.values(users).map(u => u.name.toLowerCase());
+          data.labels.forEach(tag => {
+            if (!tag.startsWith("Autore:") && !authorNames.includes(tag.toLowerCase())) {
+              const opt = document.createElement("option");
+              opt.value = tag;
+              opt.innerText = tag;
+              select.appendChild(opt);
+            }
+          });
+        }
+      } catch(e) {}
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById("loginScreen").classList.remove("hidden");
+      document.getElementById("dashboardScreen").classList.add("hidden");
+    }
+
+    async function saveDraft() {
+      const title = document.getElementById("postTitle").value.trim();
+      let rawContent = quill.root.innerHTML;
+      const category = document.getElementById("postCategory").value;
+      const statusMsg = document.getElementById("statusMessage");
+      const saveBtn = document.getElementById("saveBtn");
+
+      if (!title || quill.getText().trim().length === 0) {
+        statusMsg.className = "text-sm font-medium text-amber-600";
+        statusMsg.innerText = "Inserisci sia il titolo che il testo prima di inviare.";
+        return;
+      }
+
+      const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
+      const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
+
+      let byline = `<p><em><strong>Scritto da <a href="${currentUser.link}" target="_blank">${currentUser.name}</a></strong>`;
+      const labels = [category, currentUser.name];
+
+      if (selectedCoAuthorKeys.length > 0) {
+        const coAuthorsLinks = selectedCoAuthorKeys.map(key => {
+          const coAuthor = users[key];
+          labels.push(coAuthor.name);
+          return `<a href="${coAuthor.link}" target="_blank">${coAuthor.name}</a>`;
+        });
+        byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
+      }
+      
+      byline += `</em></p><hr><br>`;
+
+      const finalContent = byline + rawContent;
+
+      statusMsg.className = "text-sm font-medium text-blue-600";
+      statusMsg.innerText = "Invio della bozza in corso...";
+      saveBtn.disabled = true;
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, content: finalContent, labels })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          statusMsg.className = "text-sm font-medium text-emerald-600";
+          statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
+          
+          localStorage.removeItem(`auto_draft_${currentUser.key}`);
+          document.getElementById("postTitle").value = "";
+          quill.setContents([]);
+          document.querySelectorAll('.coauthor-checkbox').forEach(cb => cb.checked = false);
+          document.getElementById("autoSaveIndicator").innerText = "Salvataggio automatico attivo";
+        } else {
+          statusMsg.className = "text-sm font-medium text-red-600";
+          statusMsg.innerText = "Errore: " + (result.error || "Impossibile salvare la bozza.");
+        }
+      } catch (err) {
+        statusMsg.className = "text-sm font-medium text-red-600";
+        statusMsg.innerText = "Errore di connessione con il server.";
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
