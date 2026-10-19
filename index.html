@@ -16,16 +16,12 @@
   <div id="announcementModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="text-lg font-bold text-blue-600 flex items-center gap-2">
-          📢 Comunicato dalla Caporedazione
-        </h3>
+        <h3 class="text-lg font-bold text-blue-600 flex items-center gap-2">📢 Comunicato dalla Caporedazione</h3>
         <span id="announcementDate" class="text-xs text-slate-400 font-medium"></span>
       </div>
       <div id="announcementContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2"></div>
       <div class="text-right pt-2 border-t">
-        <button onclick="confirmReadAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">
-          Ho Capito
-        </button>
+        <button onclick="confirmReadAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">Ho Capito</button>
       </div>
     </div>
   </div>
@@ -37,13 +33,11 @@
         <h3 class="text-base font-bold text-slate-900">📊 Stato Lettura Comunicato</h3>
         <button onclick="closeReadDetailsModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
       </div>
-      <div id="readDetailsBody" class="space-y-4 text-xs">
-        <!-- Lista Utenti e Stato Lettura -->
-      </div>
+      <div id="readDetailsBody" class="space-y-4 text-xs"></div>
     </div>
   </div>
 
-  <!-- Modal Lettura e Modifica Bozza per Caporedattore -->
+  <!-- Modal Lettura e Modifica Bozza -->
   <div id="viewDraftModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 text-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
@@ -57,12 +51,8 @@
       <div class="flex flex-wrap justify-between items-center gap-2 pt-2">
         <button onclick="deleteCurrentDraft()" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg transition">Elimina Bozza</button>
         <div class="flex gap-2">
-          <button onclick="editCurrentDraftInEditor()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">
-            ✏️ Modifica nell'Editor
-          </button>
-          <button onclick="publishCurrentDraftToBlogger()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">
-            Approva & Invia a Blogger
-          </button>
+          <button onclick="editCurrentDraftInEditor()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">✏️ Modifica nell'Editor</button>
+          <button onclick="publishCurrentDraftToBlogger()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">Approva & Invia a Blogger</button>
         </div>
       </div>
     </div>
@@ -99,7 +89,6 @@
   <!-- Dashboard Principale -->
   <div id="dashboardScreen" class="hidden min-h-screen flex flex-col justify-between">
     <div>
-      <!-- Navbar -->
       <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-2 shadow-sm">
         <div class="flex items-center space-x-3">
           <img src="https://www.ermes-umg.it/favicon.ico" alt="Logo" class="h-8 w-8 object-contain">
@@ -116,24 +105,16 @@
       <!-- BARRA DI NAVIGAZIONE A SCHEDE (TABS) -->
       <div class="max-w-4xl mx-auto mt-6 px-4">
         <div class="flex border-b border-slate-200 gap-2">
-          <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition">
-            📅 Calendario & Prenotazioni
-          </button>
-          <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
-            ✍️ Scrittura Articolo
-          </button>
-          <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
-            ⚙️ Gestione & Ruoli
-          </button>
+          <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition">📅 Calendario & Prenotazioni</button>
+          <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">✍️ Scrittura Articolo</button>
+          <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">⚙️ Gestione & Ruoli</button>
         </div>
       </div>
 
-      <!-- SCHEDA 1: CALENDARIO PRENOTAZIONI -->
+      <!-- SCHEDA 1: CALENDARIO -->
       <div id="tabCalendar" class="max-w-4xl mx-auto my-6 px-4 space-y-6">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
-            📌 Prenota un Articolo nel Programma Editoriale
-          </h3>
+          <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">📌 Prenota un Articolo nel Programma Editoriale</h3>
           <p class="text-xs text-slate-500 mb-4">Indica il titolo e la data di uscita prevista per il tuo articolo in modo che la redazione possa coordinarsi.</p>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -145,12 +126,9 @@
               <option value="Pronto per Revisione">✅ Pronto per Revisione</option>
             </select>
           </div>
-          <button onclick="addCalendarEvent()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
-            + Aggiungi al Calendario
-          </button>
+          <button onclick="addCalendarEvent()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">+ Aggiungi al Calendario</button>
         </div>
 
-        <!-- Lista Articoli Prenotati -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h4 class="text-sm font-bold text-slate-800 mb-3">📅 Prossime Uscite Programmate</h4>
           <div class="overflow-x-auto">
@@ -164,21 +142,39 @@
                   <th class="p-2">Azione</th>
                 </tr>
               </thead>
-              <tbody id="calendarTable" class="divide-y divide-slate-100">
-              </tbody>
+              <tbody id="calendarTable" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- SCHEDA 2: AREA EDITOR ARTICOLO -->
+      <!-- SCHEDA 2: AREA EDITOR ARTICOLO & STATISTICHE -->
       <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200 space-y-6">
         
-        <!-- SEZIONE BOZZE IN REVISIONE (SOLO CAPOREDATTORE & ADMIN) -->
-        <div id="sharedDraftsSection" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
-          <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
-            📋 Bozze Inviate dai Redattori per Revisione
+        <!-- SEZIONE STATISTICHE ARTICOLI (SE ABILITATA DALL'ADMIN) -->
+        <div id="statsSectionArea" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-emerald-900 flex items-center justify-between">
+            <span>📈 Articoli Pubblicati & Statistiche Redazione</span>
+            <button onclick="loadArticleStats()" class="text-xs text-emerald-700 hover:underline">🔄 Aggiorna</button>
           </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+              <thead class="bg-emerald-100/60 uppercase text-[10px] text-emerald-800">
+                <tr>
+                  <th class="p-2">Data</th>
+                  <th class="p-2">Titolo Articolo</th>
+                  <th class="p-2">Tag / Categoria</th>
+                  <th class="p-2">Link</th>
+                </tr>
+              </thead>
+              <tbody id="articleStatsTable" class="divide-y divide-emerald-200/50"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BOZZE IN REVISIONE -->
+        <div id="sharedDraftsSection" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">📋 Bozze Inviate dai Redattori per Revisione</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-700">
               <thead class="bg-amber-100/60 uppercase text-[10px] text-amber-800">
@@ -189,13 +185,11 @@
                   <th class="p-2">Azione</th>
                 </tr>
               </thead>
-              <tbody id="sharedDraftsTable" class="divide-y divide-amber-200/50">
-              </tbody>
+              <tbody id="sharedDraftsTable" class="divide-y divide-amber-200/50"></tbody>
             </table>
           </div>
         </div>
 
-        <!-- AVVISO REVISIONE PER CAPOREDATTORE -->
         <div id="editingTargetNotice" class="hidden bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-xl text-xs flex justify-between items-center">
           <span>Stai modificando l'articolo di: <strong id="targetAuthorName"></strong>. L'articolo rimarrà intestato a questo autore.</span>
           <button onclick="resetEditingTarget()" class="text-red-500 hover:text-red-700 font-bold ml-2">Annulla Revisione</button>
@@ -228,8 +222,7 @@
 
               <div>
                 <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
-                <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs">
-                </div>
+                <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs"></div>
               </div>
             </div>
 
@@ -238,16 +231,11 @@
               <div id="editor" class="h-64 sm:h-80 bg-white"></div>
             </div>
 
-            <!-- Bar Azioni -->
             <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
               <span id="statusMessage" class="text-sm font-medium text-center sm:text-left"></span>
               <div class="flex gap-2 w-full sm:w-auto">
-                <button onclick="sendDraftToHeadEditor()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">
-                  📤 Invia in Revisione al Caporedattore
-                </button>
-                <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">
-                  🚀 Pubblica Bozza su Blogger
-                </button>
+                <button onclick="sendDraftToHeadEditor()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">📤 Invia in Revisione al Caporedattore</button>
+                <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">🚀 Pubblica Bozza su Blogger</button>
               </div>
             </div>
           </div>
@@ -257,7 +245,6 @@
       <!-- SCHEDA 3: PANNELLO ADMIN & CAPOREDATTORE -->
       <div id="tabAdmin" class="hidden max-w-4xl mx-auto my-6 space-y-6 px-4">
         
-        <!-- MESSAGGIO SEZIONE NON ACCESSIBILE PER I REDATTORI -->
         <div id="nonAccessibleNotice" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
           <div class="text-4xl mb-3">🔒</div>
           <h3 class="text-lg font-bold text-slate-800">Sezione non accessibile ai Redattori</h3>
@@ -265,21 +252,26 @@
         </div>
 
         <div id="adminContentArea" class="space-y-6">
-          <!-- SEZIONE INVIO COMUNICATI & STORICO -->
+          
+          <!-- CONTROLLO VISIBILITÀ STATISTICHE PER ADMIN -->
+          <div id="adminSettingsControl" class="bg-indigo-900 text-white p-5 rounded-2xl shadow-md border border-indigo-800 flex justify-between items-center">
+            <div>
+              <h4 class="font-bold text-sm text-indigo-200">📊 Abilita Visualizzazione Statistiche Articoli ai Redattori</h4>
+              <p class="text-xs text-indigo-300 mt-0.5">Se attivato, i redattori vedranno l'elenco e la classifica dei post pubblicati nella scheda Scrittura.</p>
+            </div>
+            <button id="toggleStatsBtn" onclick="toggleStatsVisibility()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition border border-indigo-400">Caricamento...</button>
+          </div>
+
+          <!-- SEZIONE INVIO COMUNICATI -->
           <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
             <div>
-              <h3 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-                📢 Pubblica Avviso / Comunicato Interno
-              </h3>
+              <h3 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">📢 Pubblica Avviso / Comunicato Interno</h3>
               <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
 
               <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
-              <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
-                Invia Avviso alla Redazione
-              </button>
+              <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">Invia Avviso alla Redazione</button>
             </div>
 
-            <!-- TABELLA STORICO COMUNICATI E LETTURE -->
             <div class="border-t pt-4">
               <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
                 <span>📋 Storico Comunicati & Tracciamento Letture</span>
@@ -296,8 +288,7 @@
                       <th class="p-2">Azione</th>
                     </tr>
                   </thead>
-                  <tbody id="announcementsHistoryTable" class="divide-y divide-slate-100">
-                  </tbody>
+                  <tbody id="announcementsHistoryTable" class="divide-y divide-slate-100"></tbody>
                 </table>
               </div>
             </div>
@@ -305,9 +296,7 @@
 
           <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
           <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
-            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
-              ⚙️ Pannello Amministrazione Autori e Ruoli
-            </h3>
+            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">⚙️ Pannello Amministrazione Autori e Registro Accessi</h3>
 
             <!-- Form Nuovo Autore -->
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
@@ -326,9 +315,7 @@
                 <option value="admin">Amministratore</option>
               </select>
               
-              <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
-                + Aggiungi Nuovo Utente
-              </button>
+              <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">+ Aggiungi Nuovo Utente</button>
             </div>
 
             <!-- Lista Autori Esistenti -->
@@ -339,12 +326,12 @@
                     <th class="p-2">Username</th>
                     <th class="p-2">Nome Completo</th>
                     <th class="p-2">Ruolo</th>
+                    <th class="p-2">Ultimo Accesso</th>
                     <th class="p-2">Password</th>
                     <th class="p-2">Azione</th>
                   </tr>
                 </thead>
-                <tbody id="adminUsersTable" class="divide-y divide-slate-800">
-                </tbody>
+                <tbody id="adminUsersTable" class="divide-y divide-slate-800"></tbody>
               </table>
             </div>
           </div>
@@ -364,6 +351,7 @@
     let calendarEvents = [];
     let sharedDrafts = [];
     let announcementsHistory = [];
+    let systemSettings = { showStatsToAuthors: false };
     let activeAnnouncementModalIndex = null;
     let selectedDraftIndex = null;
     let currentUser = null;
@@ -385,18 +373,24 @@
       }
     });
 
-    quill.on('text-change', function() {
-      triggerAutoSave();
-    });
+    quill.on('text-change', function() { triggerAutoSave(); });
 
     async function fetchUsers() {
       try {
         const res = await fetch(WORKER_URL + "users");
         const data = await res.json();
         if (data.users) users = data.users;
-      } catch(e) { console.error("Errore recupero utenti", e); }
+      } catch(e) {}
     }
     fetchUsers();
+
+    async function loadSettings() {
+      try {
+        const res = await fetch(WORKER_URL + "settings");
+        systemSettings = await res.json();
+        updateSettingsUI();
+      } catch(e) {}
+    }
 
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
@@ -406,6 +400,7 @@
       btn.innerText = "Verifica in corso...";
 
       await fetchUsers();
+      await loadSettings();
 
       const u = document.getElementById("username").value.trim().toLowerCase();
       const p = document.getElementById("password").value.trim();
@@ -413,25 +408,36 @@
       if (users && users[u] && users[u].pass === p) {
         currentUser = users[u];
         currentUser.key = u;
+
+        // Registra ultimo accesso
+        currentUser.lastLogin = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        users[u].lastLogin = currentUser.lastLogin;
+
+        fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardScreen").classList.remove("hidden");
         document.getElementById("userInfo").innerText = currentUser.name;
         document.getElementById("authorTagDisplay").value = currentUser.name;
 
-        // Configurazione Ruolo
         const roleLabel = currentUser.role === "admin" ? "Amministratore" : (currentUser.role === "head_editor" ? "Caporedattore" : "Redattore");
         document.getElementById("roleBadge").innerText = roleLabel;
 
-        // Permessi Visualizzazione Pannello Admin
         if (currentUser.role === "admin" || currentUser.role === "head_editor") {
           document.getElementById("nonAccessibleNotice").classList.add("hidden");
           document.getElementById("adminContentArea").classList.remove("hidden");
           
           if (currentUser.role === "admin") {
             document.getElementById("adminPanel").classList.remove("hidden");
+            document.getElementById("adminSettingsControl").classList.remove("hidden");
             renderAdminUsers();
           } else {
             document.getElementById("adminPanel").classList.add("hidden");
+            document.getElementById("adminSettingsControl").classList.add("hidden");
           }
 
           document.getElementById("sharedDraftsSection").classList.remove("hidden");
@@ -441,6 +447,14 @@
           document.getElementById("nonAccessibleNotice").classList.remove("hidden");
           document.getElementById("adminContentArea").classList.add("hidden");
           document.getElementById("sharedDraftsSection").classList.add("hidden");
+        }
+
+        // Controllo Visibilità Statistiche
+        if (currentUser.role === "admin" || currentUser.role === "head_editor" || systemSettings.showStatsToAuthors) {
+          document.getElementById("statsSectionArea").classList.remove("hidden");
+          loadArticleStats();
+        } else {
+          document.getElementById("statsSectionArea").classList.add("hidden");
         }
 
         populateCoAuthorsCheckboxes();
@@ -455,7 +469,6 @@
       btn.innerText = "Accedi";
     });
 
-    // SISTEMA PESTAGNE (TABS)
     function switchTab(tabName) {
       document.getElementById("tabCalendar").classList.add("hidden");
       document.getElementById("tabEditor").classList.add("hidden");
@@ -474,6 +487,61 @@
       } else if (tabName === 'admin') {
         document.getElementById("tabAdmin").classList.remove("hidden");
         document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      }
+    }
+
+    // GESTIONE IMPOSTAZIONI ADMIN (TOGGLE STATISTICHE)
+    function updateSettingsUI() {
+      const btn = document.getElementById("toggleStatsBtn");
+      if (systemSettings.showStatsToAuthors) {
+        btn.innerText = "✓ Visibile ai Redattori";
+        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition shadow";
+      } else {
+        btn.innerText = "✕ Nascosto ai Redattori";
+        btn.className = "bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition shadow";
+      }
+    }
+
+    async function toggleStatsVisibility() {
+      systemSettings.showStatsToAuthors = !systemSettings.showStatsToAuthors;
+      updateSettingsUI();
+
+      await fetch(WORKER_URL + "settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(systemSettings)
+      });
+
+      alert("✓ Visibilità statistiche aggiornata!");
+    }
+
+    // CARICAMENTO STATISTICHE POST
+    async function loadArticleStats() {
+      const tbody = document.getElementById("articleStatsTable");
+      tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Caricamento articoli in corso...</td></tr>`;
+
+      try {
+        const res = await fetch(WORKER_URL + "stats");
+        const data = await res.json();
+        tbody.innerHTML = "";
+
+        if (data.posts && data.posts.length > 0) {
+          data.posts.forEach(post => {
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-emerald-100/40 transition border-b border-emerald-200/50";
+            tr.innerHTML = `
+              <td class="p-2 font-mono text-[10px] text-slate-500">${post.published}</td>
+              <td class="p-2 font-semibold text-slate-800">${post.title}</td>
+              <td class="p-2 text-slate-500">${post.labels.join(", ")}</td>
+              <td class="p-2"><a href="${post.url}" target="_blank" class="text-emerald-700 hover:underline font-bold text-[10px]">🔗 Apri Post</a></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Nessun articolo trovato.</td></tr>`;
+        }
+      } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-red-500 italic">Errore caricamento dati.</td></tr>`;
       }
     }
 
@@ -505,21 +573,12 @@
 
       const newDraft = {
         id: activeEditingDraft ? activeEditingDraft.id : Date.now(),
-        title,
-        content,
-        category,
-        author: authorName,
-        authorLink: authorLink,
-        coAuthorKeys: selectedCoAuthorKeys,
+        title, content, category, author: authorName, authorLink: authorLink, coAuthorKeys: selectedCoAuthorKeys,
         date: new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'})
       };
 
       await loadSharedDrafts();
-
-      if (activeEditingDraft) {
-        sharedDrafts = sharedDrafts.filter(d => d.id !== activeEditingDraft.id);
-      }
-      
+      if (activeEditingDraft) sharedDrafts = sharedDrafts.filter(d => d.id !== activeEditingDraft.id);
       sharedDrafts.push(newDraft);
 
       await fetch(WORKER_URL + "drafts", {
@@ -553,9 +612,7 @@
           <td class="p-2 font-semibold text-amber-900">${draft.author}</td>
           <td class="p-2 font-medium">${draft.title}</td>
           <td class="p-2 text-[10px] text-slate-500">${draft.date}</td>
-          <td class="p-2">
-            <button onclick="openDraftModal(${idx})" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Leggi & Modifica</button>
-          </td>
+          <td class="p-2"><button onclick="openDraftModal(${idx})" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Leggi & Modifica</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -578,13 +635,10 @@
     function editCurrentDraftInEditor() {
       if (selectedDraftIndex === null) return;
       const draft = sharedDrafts[selectedDraftIndex];
-
       activeEditingDraft = draft;
 
       document.getElementById("postTitle").value = draft.title || "";
-      if (draft.category) {
-        document.getElementById("postCategory").value = draft.category;
-      }
+      if (draft.category) document.getElementById("postCategory").value = draft.category;
       quill.clipboard.dangerouslyPasteHTML(draft.content || "");
 
       document.getElementById("authorTagDisplay").value = draft.author;
@@ -602,9 +656,7 @@
     function resetEditingTarget() {
       activeEditingDraft = null;
       document.getElementById("editingTargetNotice").classList.add("hidden");
-      if (currentUser) {
-        document.getElementById("authorTagDisplay").value = currentUser.name;
-      }
+      if (currentUser) document.getElementById("authorTagDisplay").value = currentUser.name;
     }
 
     async function deleteCurrentDraft() {
@@ -636,10 +688,7 @@
           }
           return '';
         }).filter(l => l !== '');
-        
-        if (coAuthorsLinks.length > 0) {
-          byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
-        }
+        if (coAuthorsLinks.length > 0) byline += ` in collaborazione con ${coAuthorsLinks.join(", ")}`;
       }
       
       byline += `</em></p><hr><br>`;
@@ -655,7 +704,7 @@
         const result = await response.json();
 
         if (response.ok && result.success) {
-          alert("✓ Bozza approvata e inviata con successo su Blogger a nome di " + draft.author + "!");
+          alert("✓ Bozza approvata e pubblicata su Blogger a nome di " + draft.author + "!");
           sharedDrafts = sharedDrafts.filter(d => d.id !== draft.id);
           await fetch(WORKER_URL + "drafts", {
             method: "POST",
@@ -688,11 +737,9 @@
       if (!text) return alert("Inserisci un testo per l'avviso!");
 
       const newAnnouncement = {
-        id: Date.now(),
-        text: text,
-        author: currentUser.name,
+        id: Date.now(), text, author: currentUser.name,
         date: new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'}),
-        reads: {} // Mappa degli utenti che hanno confermato la lettura
+        reads: {}
       };
 
       await loadAnnouncementsHistory();
@@ -713,7 +760,6 @@
       try {
         await loadAnnouncementsHistory();
         if (announcementsHistory.length > 0) {
-          // Trova il comunicato più recente non ancora letto dall'utente loggato
           const unreadIndex = announcementsHistory.findIndex(a => !a.reads || !a.reads[currentUser.key]);
           if (unreadIndex !== -1) {
             activeAnnouncementModalIndex = unreadIndex;
@@ -730,7 +776,6 @@
       if (activeAnnouncementModalIndex !== null && announcementsHistory[activeAnnouncementModalIndex]) {
         const ann = announcementsHistory[activeAnnouncementModalIndex];
         if (!ann.reads) ann.reads = {};
-        
         ann.reads[currentUser.key] = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
 
         await fetch(WORKER_URL + "announcements", {
@@ -746,7 +791,6 @@
     function renderAnnouncementsHistoryTable() {
       const tbody = document.getElementById("announcementsHistoryTable");
       tbody.innerHTML = "";
-
       if (announcementsHistory.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">Nessun comunicato in archivio.</td></tr>`;
         return;
@@ -762,11 +806,7 @@
           <td class="p-2 text-[10px] text-slate-400 font-mono">${ann.date}</td>
           <td class="p-2 font-medium text-slate-800 max-w-xs truncate">${ann.text}</td>
           <td class="p-2 text-slate-600">${ann.author}</td>
-          <td class="p-2">
-            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold border border-blue-200">
-              👁️ ${readsCount} / ${totalUsersCount} letture
-            </span>
-          </td>
+          <td class="p-2"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold border border-blue-200">👁️ ${readsCount} / ${totalUsersCount} letture</span></td>
           <td class="p-2 flex gap-1">
             <button onclick="openReadDetailsModal(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-semibold">👁️ Dettagli Letture</button>
             <button onclick="deleteAnnouncement(${ann.id})" class="bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-semibold border border-red-200">Elimina</button>
@@ -785,8 +825,7 @@
       let readHtml = `<div class="space-y-1 mt-2"><h5 class="font-bold text-emerald-700">✅ Hanno letto il messaggio:</h5><ul class="divide-y divide-slate-100 border rounded-lg p-2 bg-slate-50">`;
       let unreadHtml = `<div class="space-y-1 mt-3"><h5 class="font-bold text-amber-700">⏳ Non hanno ancora letto:</h5><ul class="divide-y divide-slate-100 border rounded-lg p-2 bg-slate-50">`;
 
-      let hasRead = false;
-      let hasUnread = false;
+      let hasRead = false, hasUnread = false;
 
       totalUsers.forEach(uKey => {
         const userName = users[uKey].name;
@@ -802,16 +841,12 @@
       if (!hasRead) readHtml += `<li class="py-1 text-slate-400 italic">Nessun utente ha ancora letto.</li>`;
       if (!hasUnread) unreadHtml += `<li class="py-1 text-slate-400 italic">Tutti i redattori hanno letto il messaggio.</li>`;
 
-      readHtml += `</ul></div>`;
-      unreadHtml += `</ul></div>`;
-
+      readHtml += `</ul></div>`; unreadHtml += `</ul></div>`;
       container.innerHTML += readHtml + unreadHtml;
       document.getElementById("readDetailsModal").classList.remove("hidden");
     }
 
-    function closeReadDetailsModal() {
-      document.getElementById("readDetailsModal").classList.add("hidden");
-    }
+    function closeReadDetailsModal() { document.getElementById("readDetailsModal").classList.add("hidden"); }
 
     async function deleteAnnouncement(id) {
       if (confirm("Sei sicuro di voler eliminare questo comunicato dallo storico?")) {
@@ -840,10 +875,7 @@
       const date = document.getElementById("eventDate").value;
       const status = document.getElementById("eventStatus").value;
 
-      if (!title || !date) {
-        alert("Inserisci sia il titolo che la data!");
-        return;
-      }
+      if (!title || !date) return alert("Inserisci sia il titolo che la data!");
 
       calendarEvents.push({ id: Date.now(), title, date, status, author: currentUser.name, authorKey: currentUser.key });
 
@@ -916,7 +948,7 @@
 
       if (!uKey || !name || !pass) return alert("Compila i campi obbligatori!");
 
-      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role };
+      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role, lastLogin: "-" };
 
       await fetch(WORKER_URL + "users", {
         method: "POST",
@@ -976,6 +1008,7 @@
               <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Amministratore</option>
             </select>
           </td>
+          <td class="p-2 text-slate-400 font-mono text-[10px]">${u.lastLogin || '-'}</td>
           <td class="p-2">
             <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 w-32">
           </td>
@@ -995,7 +1028,6 @@
       document.getElementById("newPass").value = pass;
     }
 
-    // EDITOR & DRAFT AUTOSAVE
     function triggerAutoSave() {
       if (!currentUser) return;
       const title = document.getElementById("postTitle").value.trim();
