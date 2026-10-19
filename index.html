@@ -104,11 +104,11 @@
 
       <!-- BARRA DI NAVIGAZIONE A SCHEDE (TABS) -->
       <div class="max-w-4xl mx-auto mt-6 px-4">
-        <div class="flex border-b border-slate-200 gap-2">
-          <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition">📅 Calendario & Prenotazioni</button>
-          <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">✍️ Scrittura Articolo</button>
-          <button id="tabStatsBtn" onclick="switchTab('stats')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">📊 Statistiche Articoli</button>
-          <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">⚙️ Gestione & Ruoli</button>
+        <div class="flex border-b border-slate-200 gap-2 overflow-x-auto">
+          <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap">📅 Calendario & Prenotazioni</button>
+          <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">✍️ Scrittura Articolo</button>
+          <button id="tabStatsBtn" onclick="switchTab('stats')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">📊 Statistiche Articoli</button>
+          <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">⚙️ Gestione & Ruoli</button>
         </div>
       </div>
 
@@ -152,7 +152,6 @@
       <!-- SCHEDA 2: AREA EDITOR ARTICOLO -->
       <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200 space-y-6">
         
-        <!-- BOZZE IN REVISIONE -->
         <div id="sharedDraftsSection" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
           <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">📋 Bozze Inviate dai Redattori per Revisione</h3>
           <div class="overflow-x-auto">
@@ -222,38 +221,53 @@
         </div>
       </main>
 
-      <!-- SCHEDA 3: SEZIONE DEDICATA STATISTICHE ARTICOLI -->
+      <!-- SCHEDA 3: SEZIONE DEDICATA STATISTICHE ARTICOLI & LETTORI BLOG -->
       <div id="tabStats" class="hidden max-w-4xl mx-auto my-6 px-4 space-y-6">
         
-        <!-- MESSAGGIO DI ACCESSO NEGATO PER CHI NON HA IL PERMESSO -->
         <div id="statsPermissionNotice" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
           <div class="text-4xl mb-3">🔒</div>
           <h3 class="text-lg font-bold text-slate-800">Visualizzazione Statistiche Non Abilitata</h3>
           <p class="text-xs text-slate-500 mt-1">L'accesso a questa sezione deve essere abilitato individualmente dall'Amministratore della redazione.</p>
         </div>
 
-        <div id="statsContentArea" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-          <div class="flex justify-between items-center border-b pb-3">
+        <div id="statsContentArea" class="space-y-6">
+          
+          <!-- RIQUADRO LETTORI TOTALI BLOG -->
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-2xl shadow-lg flex justify-between items-center">
             <div>
-              <h3 class="text-lg font-bold text-slate-900">📊 Statistiche & Visualizzazioni Articoli</h3>
-              <p class="text-xs text-slate-500">Consulta gli articoli pubblicati sul giornale con i relativi dati di lettura e tag.</p>
+              <span class="text-xs font-semibold uppercase tracking-wider text-blue-200">Totale Lettori del Giornale</span>
+              <h2 id="totalBlogViewsCounter" class="text-3xl sm:text-4xl font-extrabold mt-1">...</h2>
+              <p class="text-xs text-blue-100 mt-1">Visualizzazioni complessive registrate sul blog</p>
             </div>
-            <button onclick="loadArticleStats()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-3 py-1.5 rounded-lg border border-emerald-200 transition">🔄 Aggiorna Dati</button>
+            <div class="text-4xl opacity-80">📈</div>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-700">
-              <thead class="bg-slate-50 uppercase text-[10px] text-slate-400">
-                <tr>
-                  <th class="p-2">Data</th>
-                  <th class="p-2">Titolo Articolo</th>
-                  <th class="p-2">Tag / Categoria</th>
-                  <th class="p-2">Link Post</th>
-                </tr>
-              </thead>
-              <tbody id="articleStatsTable" class="divide-y divide-slate-100"></tbody>
-            </table>
+          <!-- TABELLA LETTORI SINGOLI ARTICOLI -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 class="text-lg font-bold text-slate-900">📊 Lettori per Singolo Articolo</h3>
+                <p class="text-xs text-slate-500">Elenco dei post pubblicati con il conteggio in tempo reale delle letture.</p>
+              </div>
+              <button onclick="loadArticleStats()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs px-3 py-1.5 rounded-lg border border-blue-200 transition">🔄 Aggiorna Dati</button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 uppercase text-[10px] text-slate-400">
+                  <tr>
+                    <th class="p-2">Data</th>
+                    <th class="p-2">Titolo Articolo</th>
+                    <th class="p-2">Tag / Categoria</th>
+                    <th class="p-2">👁️ Lettori / Views</th>
+                    <th class="p-2">Link Post</th>
+                  </tr>
+                </thead>
+                <tbody id="articleStatsTable" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
           </div>
+
         </div>
       </div>
 
@@ -268,7 +282,6 @@
 
         <div id="adminContentArea" class="space-y-6">
           
-          <!-- SEZIONE INVIO COMUNICATI -->
           <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
             <div>
               <h3 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">📢 Pubblica Avviso / Comunicato Interno</h3>
@@ -300,11 +313,9 @@
             </div>
           </div>
 
-          <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
           <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
             <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">⚙️ Pannello Amministrazione Autori & Permessi singoli</h3>
 
-            <!-- Form Nuovo Autore -->
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
               <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
               <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
@@ -324,7 +335,6 @@
               <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">+ Aggiungi Nuovo Utente</button>
             </div>
 
-            <!-- Lista Autori Esistenti -->
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs text-slate-300">
                 <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
@@ -406,7 +416,6 @@
         currentUser = users[u];
         currentUser.key = u;
 
-        // Registra ultimo accesso
         currentUser.lastLogin = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
         users[u].lastLogin = currentUser.lastLogin;
 
@@ -462,22 +471,21 @@
       document.getElementById("tabStats").classList.add("hidden");
       document.getElementById("tabAdmin").classList.add("hidden");
 
-      document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
-      document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
-      document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
-      document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+      document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
+      document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
+      document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
+      document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
 
       if (tabName === 'calendar') {
         document.getElementById("tabCalendar").classList.remove("hidden");
-        document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+        document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
       } else if (tabName === 'editor') {
         document.getElementById("tabEditor").classList.remove("hidden");
-        document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+        document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
       } else if (tabName === 'stats') {
         document.getElementById("tabStats").classList.remove("hidden");
-        document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+        document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
         
-        // Verifica permessi per le statistiche
         if (currentUser.role === "admin" || currentUser.role === "head_editor" || currentUser.canViewStats) {
           document.getElementById("statsContentArea").classList.remove("hidden");
           document.getElementById("statsPermissionNotice").classList.add("hidden");
@@ -488,19 +496,23 @@
         }
       } else if (tabName === 'admin') {
         document.getElementById("tabAdmin").classList.remove("hidden");
-        document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+        document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
       }
     }
 
-    // CARICAMENTO STATISTICHE POST
+    // CARICAMENTO STATISTICHE ARTICOLI E LETTORI
     async function loadArticleStats() {
       const tbody = document.getElementById("articleStatsTable");
-      tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Caricamento articoli in corso...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">Caricamento dati lettori in corso...</td></tr>`;
 
       try {
         const res = await fetch(WORKER_URL + "stats");
         const data = await res.json();
         tbody.innerHTML = "";
+
+        if (data.totalBlogViews !== undefined) {
+          document.getElementById("totalBlogViewsCounter").innerText = data.totalBlogViews.toLocaleString('it-IT') + " lettori";
+        }
 
         if (data.posts && data.posts.length > 0) {
           data.posts.forEach(post => {
@@ -510,19 +522,19 @@
               <td class="p-2 font-mono text-[10px] text-slate-400">${post.published}</td>
               <td class="p-2 font-semibold text-slate-800">${post.title}</td>
               <td class="p-2 text-slate-500">${post.labels.join(", ")}</td>
+              <td class="p-2 font-bold text-blue-600 font-mono">👁️ ${post.views.toLocaleString('it-IT')}</td>
               <td class="p-2"><a href="${post.url}" target="_blank" class="text-blue-600 hover:underline font-bold text-[10px]">🔗 Apri Post</a></td>
             `;
             tbody.appendChild(tr);
           });
         } else {
-          tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Nessun articolo trovato.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">Nessun articolo trovato.</td></tr>`;
         }
       } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-red-500 italic">Errore caricamento dati.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-500 italic">Errore caricamento dati.</td></tr>`;
       }
     }
 
-    // TOGGLE PERMESSO STATISTICHE PER SINGOLO UTENTE
     async function toggleUserStatsPermission(key) {
       users[key].canViewStats = !users[key].canViewStats;
 
