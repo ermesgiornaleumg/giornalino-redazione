@@ -12,6 +12,42 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
 
+  <!-- Modal Pop-up Comunicati -->
+  <div id="announcementModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-blue-600 flex items-center gap-2">
+          📢 Comunicato dalla Caporedazione
+        </h3>
+        <span id="announcementDate" class="text-xs text-slate-400 font-medium"></span>
+      </div>
+      <div id="announcementContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2"></div>
+      <div class="text-right pt-2 border-t">
+        <button onclick="closeAnnouncementModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">
+          Ho Capito
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lettura Bozza per Caporedattore -->
+  <div id="viewDraftModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 text-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 id="draftModalTitle" class="text-lg font-bold text-slate-900"></h3>
+          <p id="draftModalAuthor" class="text-xs text-blue-600 font-medium mt-0.5"></p>
+        </div>
+        <button onclick="closeDraftModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      </div>
+      <div id="draftModalBody" class="text-sm text-slate-700 leading-relaxed space-y-3 py-2 border-b"></div>
+      <div class="flex justify-between items-center pt-2">
+        <button onclick="deleteCurrentDraft()" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-lg transition">Elimina Bozza</button>
+        <button onclick="publishCurrentDraftToBlogger()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">Approva & Invia a Blogger</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Schermata di Login -->
   <div id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 text-center">
@@ -19,26 +55,18 @@
         <img src="https://www.ermes-umg.it/favicon.ico" alt="Ermes UMG Logo" class="h-16 w-16 object-contain rounded-xl shadow-sm border border-slate-100 p-1">
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Redazione Ermes UMG</h1>
-      <p class="text-slate-500 text-sm mt-1 mb-4">Accedi per gestire articoli, prenotazioni e comunicati</p>
-
-      <!-- TEST CONNESSIONE SERVER -->
-      <div class="mb-4 p-3 bg-slate-50 border rounded-lg text-xs text-left">
-        <button type="button" onclick="testConnection()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-1 rounded transition mb-1">
-          🔍 Test Connessione Server
-        </button>
-        <p id="testStatus" class="text-[11px] text-slate-500 font-mono italic">Clicca per testare la comunicazione con Cloudflare...</p>
-      </div>
+      <p class="text-slate-500 text-sm mt-1 mb-6">Accedi per gestire articoli, prenotazioni e comunicati</p>
 
       <form id="loginForm" class="space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
-          <input type="text" id="username" required placeholder="es. admin o bruno.rachiele" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          <input type="text" id="username" required placeholder="es. bruno.rachiele" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
           <input type="password" id="password" required class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
-        <p id="loginError" class="text-red-500 text-xs hidden text-center font-medium"></p>
+        <p id="loginError" class="text-red-500 text-xs hidden text-center font-medium">Credenziali non valide.</p>
         <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition shadow-sm">Accedi</button>
       </form>
 
@@ -48,62 +76,245 @@
     </div>
   </div>
 
+  <!-- Dashboard Principale -->
+  <div id="dashboardScreen" class="hidden min-h-screen flex flex-col justify-between">
+    <div>
+      <!-- Navbar -->
+      <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-2 shadow-sm">
+        <div class="flex items-center space-x-3">
+          <img src="https://www.ermes-umg.it/favicon.ico" alt="Logo" class="h-8 w-8 object-contain">
+          <span class="font-bold text-base sm:text-lg text-slate-900">Ermes UMG</span>
+          <span id="roleBadge" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">Redattore</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <span id="userInfo" class="text-xs sm:text-sm font-medium text-slate-600"></span>
+          <button onclick="changeOwnPassword()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-md transition border">🔑 Cambia Password</button>
+          <button onclick="logout()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-md transition border border-red-200">Esci</button>
+        </div>
+      </nav>
+
+      <!-- BARRA DI NAVIGAZIONE A SCHEDE (TABS) -->
+      <div class="max-w-4xl mx-auto mt-6 px-4">
+        <div class="flex border-b border-slate-200 gap-2">
+          <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition">
+            📅 Calendario & Prenotazioni
+          </button>
+          <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
+            ✍️ Scrittura Articolo
+          </button>
+          <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
+            ⚙️ Gestione & Ruoli
+          </button>
+        </div>
+      </div>
+
+      <!-- SCHEDA 1: CALENDARIO PRENOTAZIONI -->
+      <div id="tabCalendar" class="max-w-4xl mx-auto my-6 px-4 space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+            📌 Prenota un Articolo nel Programma Editoriale
+          </h3>
+          <p class="text-xs text-slate-500 mb-4">Indica il titolo e la data di uscita prevista per il tuo articolo in modo che la redazione possa coordinarsi.</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <input type="text" id="eventTitle" placeholder="Titolo/Argomento dell'articolo..." class="px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500">
+            <input type="date" id="eventDate" class="px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 text-slate-600">
+            <select id="eventStatus" class="px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+              <option value="In Idea">💡 In Idea</option>
+              <option value="In Scrittura">✍️ In Scrittura</option>
+              <option value="Pronto per Revisione">✅ Pronto per Revisione</option>
+            </select>
+          </div>
+          <button onclick="addCalendarEvent()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+            + Aggiungi al Calendario
+          </button>
+        </div>
+
+        <!-- Lista Articoli Prenotati -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h4 class="text-sm font-bold text-slate-800 mb-3">📅 Prossime Uscite Programmate</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 uppercase text-[10px] text-slate-400">
+                <tr>
+                  <th class="p-2">Data Prevista</th>
+                  <th class="p-2">Titolo / Argomento</th>
+                  <th class="p-2">Autore</th>
+                  <th class="p-2">Stato</th>
+                  <th class="p-2">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="calendarTable" class="divide-y divide-slate-100">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDA 2: AREA EDITOR ARTICOLO -->
+      <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200 space-y-6">
+        
+        <!-- SEZIONE BOZZE IN REVISIONE (SOLO CAPOREDATTORE & ADMIN) -->
+        <div id="sharedDraftsSection" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+            📋 Bozze Inviate dai Redattori per Revisione
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+              <thead class="bg-amber-100/60 uppercase text-[10px] text-amber-800">
+                <tr>
+                  <th class="p-2">Autore</th>
+                  <th class="p-2">Titolo Bozza</th>
+                  <th class="p-2">Data Invio</th>
+                  <th class="p-2">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="sharedDraftsTable" class="divide-y divide-amber-200/50">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
+            <span id="autoSaveIndicator" class="text-xs text-slate-400 italic">Salvataggio automatico attivo</span>
+          </div>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Titolo dell'articolo</label>
+              <input type="text" id="postTitle" oninput="triggerAutoSave()" placeholder="Inserisci il titolo..." class="w-full text-base sm:text-lg px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoria / Tag Principale</label>
+                <select id="postCategory" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                  <option value="">Caricamento tag in corso...</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Autore Principale</label>
+                <input type="text" id="authorTagDisplay" disabled class="w-full px-3 py-2 border rounded-lg bg-slate-50 text-slate-500 font-medium cursor-not-allowed text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Co-Autori / Collaboratori</label>
+                <div id="coAuthorsList" class="border rounded-lg p-2 bg-slate-50 max-h-36 overflow-y-auto space-y-1.5 text-xs">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Contenuto dell'articolo</label>
+              <div id="editor" class="h-64 sm:h-80 bg-white"></div>
+            </div>
+
+            <!-- Bar Azioni -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
+              <span id="statusMessage" class="text-sm font-medium text-center sm:text-left"></span>
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="sendDraftToHeadEditor()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">
+                  📤 Invia in Revisione al Caporedattore
+                </button>
+                <button id="saveBtn" onclick="saveDraft()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm transition text-xs flex items-center justify-center">
+                  🚀 Pubblica Bozza su Blogger
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- SCHEDA 3: PANNELLO ADMIN & CAPOREDATTORE -->
+      <div id="tabAdmin" class="hidden max-w-4xl mx-auto my-6 space-y-6 px-4">
+        
+        <!-- MESSAGGIO SEZIONE NON ACCESSIBILE PER I REDATTORI -->
+        <div id="nonAccessibleNotice" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
+          <div class="text-4xl mb-3">🔒</div>
+          <h3 class="text-lg font-bold text-slate-800">Sezione non accessibile ai Redattori</h3>
+          <p class="text-xs text-slate-500 mt-1">Questa pagina è riservata esclusivamente ai Caporedattori e agli Amministratori per la gestione interna della redazione.</p>
+        </div>
+
+        <div id="adminContentArea" class="space-y-6">
+          <!-- SEZIONE INVIO COMUNICATI (Per Admin e Caporedattori) -->
+          <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+              📢 Pubblica Avviso / Comunicato Interno
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
+
+            <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
+            <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+              Invia Avviso alla Redazione
+            </button>
+          </div>
+
+          <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
+          <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
+            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+              ⚙️ Pannello Amministrazione Autori e Ruoli
+            </h3>
+
+            <!-- Form Nuovo Autore -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
+              <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+              <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+              <input type="text" id="newLink" placeholder="Link Pagina Autore" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+              
+              <div class="flex gap-1">
+                <input type="text" id="newPass" placeholder="Password" class="w-full px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none font-mono">
+                <button onclick="generatePassword()" class="bg-slate-600 hover:bg-slate-500 text-xs px-2 py-2 rounded font-semibold transition">🔑</button>
+              </div>
+
+              <select id="newRole" class="px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none">
+                <option value="author">Redattore</option>
+                <option value="head_editor">Caporedattore</option>
+                <option value="admin">Amministratore</option>
+              </select>
+              
+              <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
+                + Aggiungi Nuovo Utente
+              </button>
+            </div>
+
+            <!-- Lista Autori Esistenti -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
+                  <tr>
+                    <th class="p-2">Username</th>
+                    <th class="p-2">Nome Completo</th>
+                    <th class="p-2">Ruolo</th>
+                    <th class="p-2">Password</th>
+                    <th class="p-2">Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTable" class="divide-y divide-slate-800">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="py-4 text-center text-xs text-slate-400">
+      <p>Pannello Redazione Ermes UMG • Creato da <span class="font-semibold text-slate-600">Bruno Rachiele</span></p>
+    </footer>
+  </div>
+
   <script>
     const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
-    let users = null;
+    let users = {};
+    let calendarEvents = [];
+    let sharedDrafts = [];
+    let selectedDraftIndex = null;
+    let currentUser = null;
 
-    async function testConnection() {
-      const status = document.getElementById("testStatus");
-      status.innerText = "Connessione in corso a " + WORKER_URL + "users ...";
-      try {
-        const res = await fetch(WORKER_URL + "users");
-        const data = await res.json();
-        if (data.users) {
-          users = data.users;
-          status.innerHTML = "<span class='text-emerald-600 font-bold'>✓ Server Online!</span> Utenti trovati: " + Object.keys(users).length;
-        } else {
-          status.innerHTML = "<span class='text-amber-600 font-bold'>⚠️ Risposta del server non valida:</span> " + JSON.stringify(data);
-        }
-      } catch(e) {
-        status.innerHTML = "<span class='text-red-600 font-bold'>❌ Errore Connessione:</span> " + e.message;
-      }
-    }
-
-    document.getElementById("loginForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const errBox = document.getElementById("loginError");
-      const btn = document.getElementById("loginBtn");
-      errBox.classList.add("hidden");
-      btn.disabled = true;
-      btn.innerText = "Verifica in corso...";
-
-      const u = document.getElementById("username").value.trim().toLowerCase();
-      const p = document.getElementById("password").value.trim();
-
-      try {
-        const res = await fetch(WORKER_URL + "users");
-        const data = await res.json();
-        
-        if (data.users) {
-          users = data.users;
-        } else {
-          throw new Error("Impossibile scaricare la lista utenti dal server.");
-        }
-
-        if (users[u] && users[u].pass === p) {
-          alert("✓ Login effettuato con successo come " + users[u].name + "!");
-        } else {
-          errBox.innerText = "Credenziali non valide. Controlla username e password.";
-          errBox.classList.remove("hidden");
-        }
-      } catch(e) {
-        errBox.innerText = "Errore di comunicazione: " + e.message;
-        errBox.classList.remove("hidden");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Accedi";
-      }
-    });
-  </script>
-</body>
-</html>
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
