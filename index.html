@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- IMPEDISCE L'INDICIZZAZIONE SUI MOTORI DI RICERCA -->
   <meta name="robots" content="noindex, nofollow">
-  
   <title>Pannello Redazione - Ermes UMG</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Quill.js Editor -->
@@ -15,6 +12,25 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
 
+  <!-- Modal Pop-up Comunicati -->
+  <div id="announcementModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4 animate-fade-in">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-blue-600 flex items-center gap-2">
+          📢 Comunicato dalla Caporedazione
+        </h3>
+        <span id="announcementDate" class="text-xs text-slate-400 font-medium"></span>
+      </div>
+      <div id="announcementContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2">
+      </div>
+      <div class="text-right pt-2 border-t">
+        <button onclick="closeAnnouncementModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">
+          Ho Capito
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Schermata di Login -->
   <div id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 text-center">
@@ -22,7 +38,7 @@
         <img src="https://www.ermes-umg.it/favicon.ico" alt="Ermes UMG Logo" class="h-16 w-16 object-contain rounded-xl shadow-sm border border-slate-100 p-1">
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Redazione Ermes UMG</h1>
-      <p class="text-slate-500 text-sm mt-1 mb-6">Accedi per gestire autori o inviare articoli</p>
+      <p class="text-slate-500 text-sm mt-1 mb-6">Accedi per gestire articoli, prenotazioni e comunicati</p>
 
       <form id="loginForm" class="space-y-4 text-left">
         <div>
@@ -60,47 +76,66 @@
         </div>
       </nav>
 
-      <!-- PANNELLO ADMIN (Visibile solo per admin) -->
-      <div id="adminPanel" class="hidden max-w-4xl mx-auto my-6 p-6 bg-slate-900 text-white rounded-2xl shadow-md border border-slate-800">
-        <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
-          ⚙️ Pannello Amministrazione Autori
-        </h3>
-
-        <!-- Form Nuovo Autore -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
-          <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
-          <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
-          <input type="text" id="newLink" placeholder="Link Pagina Autore" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
-          
-          <div class="flex gap-2">
-            <input type="text" id="newPass" placeholder="Password" class="w-full px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none font-mono">
-            <button onclick="generatePassword()" class="bg-slate-600 hover:bg-slate-500 text-xs px-2.5 py-2 rounded font-semibold transition" title="Genera password casuale">🔑</button>
-          </div>
-          
-          <button onclick="addNewUser()" class="md:col-span-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
-            + Aggiungi Nuovo Autore
+      <!-- BARRA DI NAVIGAZIONE A SCHEDE (TABS) -->
+      <div class="max-w-4xl mx-auto mt-6 px-4">
+        <div class="flex border-b border-slate-200 gap-2">
+          <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition">
+            📅 Calendario & Prenotazioni
           </button>
-        </div>
-
-        <!-- Lista Autori Esistenti -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
-              <tr>
-                <th class="p-2">Username</th>
-                <th class="p-2">Nome Completo</th>
-                <th class="p-2">Password (Visibile e Modificabile)</th>
-                <th class="p-2">Azione</th>
-              </tr>
-            </thead>
-            <tbody id="adminUsersTable" class="divide-y divide-slate-800">
-            </tbody>
-          </table>
+          <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">
+            ✍️ Scrittura Articolo
+          </button>
+          <button id="tabAdminBtn" onclick="switchTab('admin')" class="hidden py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent items-center gap-2 transition">
+            ⚙️ Gestione & Ruoli
+          </button>
         </div>
       </div>
 
-      <!-- AREA EDITOR ARTICOLO -->
-      <main class="max-w-4xl mx-auto my-4 sm:my-8 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
+      <!-- SCHEDA 1: CALENDARIO PRENOTAZIONI -->
+      <div id="tabCalendar" class="max-w-4xl mx-auto my-6 px-4 space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+            📌 Prenota un Articolo nel Programma Editoriale
+          </h3>
+          <p class="text-xs text-slate-500 mb-4">Indica il titolo e la data di uscita prevista per il tuo articolo in modo che la redazione possa coordinarsi.</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <input type="text" id="eventTitle" placeholder="Titolo/Argomento dell'articolo..." class="px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500">
+            <input type="date" id="eventDate" class="px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 text-slate-600">
+            <select id="eventStatus" class="px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+              <option value="In Idea">💡 In Idea</option>
+              <option value="In Scrittura">✍️ In Scrittura</option>
+              <option value="Pronto per Revisione">✅ Pronto per Revisione</option>
+            </select>
+          </div>
+          <button onclick="addCalendarEvent()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+            + Aggiungi al Calendario
+          </button>
+        </div>
+
+        <!-- Lista Articoli Prenotati -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h4 class="text-sm font-bold text-slate-800 mb-3">📅 Prossime Uscite Programmate</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 uppercase text-[10px] text-slate-400">
+                <tr>
+                  <th class="p-2">Data Prevista</th>
+                  <th class="p-2">Titolo / Argomento</th>
+                  <th class="p-2">Autore</th>
+                  <th class="p-2">Stato</th>
+                  <th class="p-2">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="calendarTable" class="divide-y divide-slate-100">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDA 2: AREA EDITOR ARTICOLO -->
+      <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
           <span id="autoSaveIndicator" class="text-xs text-slate-400 italic">Salvataggio automatico attivo</span>
@@ -146,6 +181,70 @@
           </div>
         </div>
       </main>
+
+      <!-- SCHEDA 3: PANNELLO ADMIN & CAPOREDATTORE -->
+      <div id="tabAdmin" class="hidden max-w-4xl mx-auto my-6 space-y-6 px-4">
+        
+        <!-- SEZIONE INVIO COMUNICATI (Per Admin e Caporedattori) -->
+        <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+            📢 Pubblica Avviso / Comunicato Interno
+          </h3>
+          <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
+
+          <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
+          <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+            Invia Avviso alla Redazione
+          </button>
+        </div>
+
+        <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
+        <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
+          <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+            ⚙️ Pannello Amministrazione Autori e Ruoli
+          </h3>
+
+          <!-- Form Nuovo Autore -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
+            <input type="text" id="newUsername" placeholder="Username (es. marco.rossi)" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+            <input type="text" id="newName" placeholder="Nome Completo" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+            <input type="text" id="newLink" placeholder="Link Pagina Autore" class="px-3 py-2 rounded bg-slate-700 text-white text-xs outline-none focus:ring-1 focus:ring-blue-400">
+            
+            <div class="flex gap-1">
+              <input type="text" id="newPass" placeholder="Password" class="w-full px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none font-mono">
+              <button onclick="generatePassword()" class="bg-slate-600 hover:bg-slate-500 text-xs px-2 py-2 rounded font-semibold transition">🔑</button>
+            </div>
+
+            <select id="newRole" class="px-2 py-2 rounded bg-slate-700 text-white text-xs outline-none">
+              <option value="author">Redattore</option>
+              <option value="head_editor">Caporedattore</option>
+              <option value="admin">Amministratore</option>
+            </select>
+            
+            <button onclick="addNewUser()" class="md:col-span-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-xs transition mt-2">
+              + Aggiungi Nuovo Utente
+            </button>
+          </div>
+
+          <!-- Lista Autori Esistenti -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2">Username</th>
+                  <th class="p-2">Nome Completo</th>
+                  <th class="p-2">Ruolo</th>
+                  <th class="p-2">Password</th>
+                  <th class="p-2">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTable" class="divide-y divide-slate-800">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <footer class="py-4 text-center text-xs text-slate-400">
@@ -156,6 +255,7 @@
   <script>
     const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
     let users = {};
+    let calendarEvents = [];
     let currentUser = null;
 
     const quill = new Quill('#editor', {
@@ -185,16 +285,13 @@
         if (data.users) {
           users = data.users;
         }
-      } catch(e) { 
-        console.error("Errore recupero utenti", e); 
-      }
+      } catch(e) { console.error("Errore recupero utenti", e); }
     }
     fetchUsers();
 
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const statusMsg = document.getElementById("loginError");
-      statusMsg.classList.add("hidden");
+      document.getElementById("loginError").classList.add("hidden");
 
       await fetchUsers();
 
@@ -206,50 +303,267 @@
         currentUser.key = u;
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardScreen").classList.remove("hidden");
-        document.getElementById("userInfo").innerText = "Autore: " + currentUser.name;
+        document.getElementById("userInfo").innerText = currentUser.name;
         document.getElementById("authorTagDisplay").value = currentUser.name;
 
-        if (currentUser.role === "admin") {
-          document.getElementById("adminPanel").classList.remove("hidden");
-          document.getElementById("roleBadge").innerText = "Amministratore";
-          renderAdminUsers();
+        // Configurazione Ruolo
+        const roleLabel = currentUser.role === "admin" ? "Amministratore" : (currentUser.role === "head_editor" ? "Caporedattore" : "Redattore");
+        document.getElementById("roleBadge").innerText = roleLabel;
+
+        // Permessi Visualizzazione
+        if (currentUser.role === "admin" || currentUser.role === "head_editor") {
+          document.getElementById("tabAdminBtn").classList.remove("hidden");
+          document.getElementById("tabAdminBtn").classList.add("flex");
+          
+          if (currentUser.role === "admin") {
+            document.getElementById("adminPanel").classList.remove("hidden");
+            renderAdminUsers();
+          } else {
+            document.getElementById("adminPanel").classList.add("hidden");
+          }
         }
 
         populateCoAuthorsCheckboxes();
         loadBloggerTags();
+        loadCalendarEvents();
+        checkAnnouncements();
         checkUnsavedDraft();
       } else {
-        statusMsg.innerText = "Credenziali non valide o password errata.";
-        statusMsg.classList.remove("hidden");
+        document.getElementById("loginError").classList.remove("hidden");
       }
     });
 
-    async function changeOwnPassword() {
-      const newPass = prompt("Inserisci la tua nuova password:");
-      if (newPass && newPass.trim().length > 0) {
-        const cleanPass = newPass.trim();
-        users[currentUser.key].pass = cleanPass;
-        currentUser.pass = cleanPass;
+    // SISTEMA PESTAGNE (TABS)
+    function switchTab(tabName) {
+      document.getElementById("tabCalendar").classList.add("hidden");
+      document.getElementById("tabEditor").classList.add("hidden");
+      document.getElementById("tabAdmin").classList.add("hidden");
 
-        try {
-          const res = await fetch(WORKER_URL + "users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ users })
-          });
+      document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+      document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+      document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
 
-          if (res.ok) {
-            alert("✓ La tua password è stata aggiornata con successo!");
-            if (currentUser.role === "admin") renderAdminUsers();
-          } else {
-            alert("Errore nel salvataggio della password sul server.");
-          }
-        } catch(e) {
-          alert("Errore di connessione durante l'aggiornamento della password.");
-        }
+      if (tabName === 'calendar') {
+        document.getElementById("tabCalendar").classList.remove("hidden");
+        document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      } else if (tabName === 'editor') {
+        document.getElementById("tabEditor").classList.remove("hidden");
+        document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      } else if (tabName === 'admin') {
+        document.getElementById("tabAdmin").classList.remove("hidden");
+        document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
       }
     }
 
+    // CALENDARIO
+    async function loadCalendarEvents() {
+      try {
+        const res = await fetch(WORKER_URL + "calendar");
+        const data = await res.json();
+        calendarEvents = data.events || [];
+        renderCalendarTable();
+      } catch(e) {}
+    }
+
+    async function addCalendarEvent() {
+      const title = document.getElementById("eventTitle").value.trim();
+      const date = document.getElementById("eventDate").value;
+      const status = document.getElementById("eventStatus").value;
+
+      if (!title || !date) {
+        alert("Inserisci sia il titolo che la data!");
+        return;
+      }
+
+      calendarEvents.push({ id: Date.now(), title, date, status, author: currentUser.name, authorKey: currentUser.key });
+
+      await fetch(WORKER_URL + "calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: calendarEvents })
+      });
+
+      document.getElementById("eventTitle").value = "";
+      document.getElementById("eventDate").value = "";
+      renderCalendarTable();
+    }
+
+    async function deleteCalendarEvent(id) {
+      calendarEvents = calendarEvents.filter(e => e.id !== id);
+      await fetch(WORKER_URL + "calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: calendarEvents })
+      });
+      renderCalendarTable();
+    }
+
+    function renderCalendarTable() {
+      const tbody = document.getElementById("calendarTable");
+      tbody.innerHTML = "";
+      calendarEvents.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      calendarEvents.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-blue-600">${item.date}</td>
+          <td class="p-2 font-medium text-slate-800">${item.title}</td>
+          <td class="p-2">${item.author}</td>
+          <td class="p-2"><span class="bg-slate-100 px-2 py-0.5 rounded text-[10px] border font-medium">${item.status}</span></td>
+          <td class="p-2">
+            ${(item.authorKey === currentUser.key || currentUser.role === 'admin' || currentUser.role === 'head_editor') ? `<button onclick="deleteCalendarEvent(${item.id})" class="text-red-500 hover:text-red-700 text-[10px] font-bold">Rimuovi</button>` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ANUNCIOS / COMUNICATI
+    async function publishAnnouncement() {
+      const text = document.getElementById("announcementText").value.trim();
+      if (!text) return alert("Inserisci un testo per l'avviso!");
+
+      const announcement = { text, date: new Date().toLocaleDateString('it-IT') };
+
+      await fetch(WORKER_URL + "announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ announcement })
+      });
+
+      document.getElementById("announcementText").value = "";
+      alert("✓ Avviso pubblicato con successo per tutta la redazione!");
+    }
+
+    async function checkAnnouncements() {
+      try {
+        const res = await fetch(WORKER_URL + "announcements");
+        const data = await res.json();
+        if (data.announcement) {
+          const lastSeen = localStorage.getItem(`seen_announcement_${currentUser.key}`);
+          if (lastSeen !== data.announcement.text) {
+            document.getElementById("announcementContent").innerText = data.announcement.text;
+            document.getElementById("announcementDate").innerText = "Pubblicato il: " + data.announcement.date;
+            document.getElementById("announcementModal").classList.remove("hidden");
+          }
+        }
+      } catch(e) {}
+    }
+
+    function closeAnnouncementModal() {
+      const text = document.getElementById("announcementContent").innerText;
+      localStorage.setItem(`seen_announcement_${currentUser.key}`, text);
+      document.getElementById("announcementModal").classList.add("hidden");
+    }
+
+    // CAMBIO PASSWORD UTENTE
+    async function changeOwnPassword() {
+      const newPass = prompt("Inserisci la tua nuova password:");
+      if (newPass && newPass.trim().length > 0) {
+        users[currentUser.key].pass = newPass.trim();
+        currentUser.pass = newPass.trim();
+
+        await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+
+        alert("✓ La tua password è stata aggiornata con successo!");
+      }
+    }
+
+    // AMMINISTRAZIONE UTENTI
+    async function addNewUser() {
+      const uKey = document.getElementById("newUsername").value.trim().toLowerCase();
+      const name = document.getElementById("newName").value.trim();
+      const link = document.getElementById("newLink").value.trim();
+      const pass = document.getElementById("newPass").value.trim();
+      const role = document.getElementById("newRole").value;
+
+      if (!uKey || !name || !pass) return alert("Compila i campi obbligatori!");
+
+      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role };
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      renderAdminUsers();
+      populateCoAuthorsCheckboxes();
+      alert("✓ Nuovo utente registrato!");
+    }
+
+    async function updateUserRoleOrPass(key) {
+      const passVal = document.getElementById(`passInput_${key}`).value.trim();
+      const roleVal = document.getElementById(`roleSelect_${key}`).value;
+
+      if (!passVal) return alert("La password non può essere vuota!");
+
+      users[key].pass = passVal;
+      users[key].role = roleVal;
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      alert(`✓ Dati per l'utente "${users[key].name}" aggiornati!`);
+    }
+
+    async function deleteUser(key) {
+      if (confirm(`Sei sicuro di voler eliminare ${users[key].name}?`)) {
+        delete users[key];
+        await fetch(WORKER_URL + "users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ users })
+        });
+        renderAdminUsers();
+      }
+    }
+
+    function renderAdminUsers() {
+      const table = document.getElementById("adminUsersTable");
+      table.innerHTML = "";
+      Object.keys(users).forEach(key => {
+        const u = users[key];
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800 transition";
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-blue-300">${key}</td>
+          <td class="p-2">${u.name}</td>
+          <td class="p-2">
+            <select id="roleSelect_${key}" class="bg-slate-700 text-white font-sans text-xs px-2 py-1 rounded border border-slate-600">
+              <option value="author" ${u.role === 'author' ? 'selected' : ''}>Redattore</option>
+              <option value="head_editor" ${u.role === 'head_editor' ? 'selected' : ''}>Caporedattore</option>
+              <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Amministratore</option>
+            </select>
+          </td>
+          <td class="p-2">
+            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 w-32">
+          </td>
+          <td class="p-2 flex items-center gap-1">
+            <button onclick="updateUserRoleOrPass('${key}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold">Salva</button>
+            ${key !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : ''}
+          </td>
+        `;
+        table.appendChild(tr);
+      });
+    }
+
+    function generatePassword() {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
+      let pass = "";
+      for (let i = 0; i < 10; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+      document.getElementById("newPass").value = pass;
+    }
+
+    // EDITOR & DRAFT AUTOSAVE
     function triggerAutoSave() {
       if (!currentUser) return;
       const title = document.getElementById("postTitle").value.trim();
@@ -269,6 +583,7 @@
         if (draft.title || (draft.content && draft.content !== '<p><br></p>')) {
           setTimeout(() => {
             if (confirm("Hai una bozza salvata non inviata. Vuoi continuare a modificarla?")) {
+              switchTab('editor');
               document.getElementById("postTitle").value = draft.title || "";
               quill.clipboard.dangerouslyPasteHTML(draft.content || "");
               document.getElementById("autoSaveIndicator").innerText = `Bozza ripristinata (${draft.updated})`;
@@ -278,108 +593,6 @@
           }, 300);
         }
       }
-    }
-
-    function generatePassword() {
-      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
-      let pass = "";
-      for (let i = 0; i < 10; i++) {
-        pass += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      document.getElementById("newPass").value = pass;
-    }
-
-    async function addNewUser() {
-      const uKey = document.getElementById("newUsername").value.trim().toLowerCase();
-      const name = document.getElementById("newName").value.trim();
-      const link = document.getElementById("newLink").value.trim();
-      const pass = document.getElementById("newPass").value.trim();
-
-      if (!uKey || !name || !pass) {
-        alert("Compila tutti i campi obbligatori!");
-        return;
-      }
-
-      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role: "author" };
-
-      await fetch(WORKER_URL + "users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ users })
-      });
-
-      renderAdminUsers();
-      populateCoAuthorsCheckboxes();
-      alert("✓ Nuovo autore aggiunto con successo!");
-      
-      document.getElementById("newUsername").value = "";
-      document.getElementById("newName").value = "";
-      document.getElementById("newLink").value = "";
-      document.getElementById("newPass").value = "";
-    }
-
-    async function updatePassword(key) {
-      const inputEl = document.getElementById(`passInput_${key}`);
-      const newPassword = inputEl.value.trim();
-
-      if (!newPassword) {
-        alert("La password non può essere vuota!");
-        return;
-      }
-
-      users[key].pass = newPassword;
-
-      try {
-        const res = await fetch(WORKER_URL + "users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ users })
-        });
-
-        if (res.ok) {
-          alert(`✓ Password per "${users[key].name}" aggiornata e salvata!`);
-          renderAdminUsers();
-        } else {
-          alert("Errore durante il salvataggio sul server.");
-        }
-      } catch(e) {
-        alert("Errore di rete durante il salvataggio.");
-      }
-    }
-
-    async function deleteUser(key) {
-      if (confirm(`Sei sicuro di voler eliminare l'autore ${users[key].name}?`)) {
-        delete users[key];
-        await fetch(WORKER_URL + "users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ users })
-        });
-        renderAdminUsers();
-        populateCoAuthorsCheckboxes();
-      }
-    }
-
-    function renderAdminUsers() {
-      const table = document.getElementById("adminUsersTable");
-      table.innerHTML = "";
-      Object.keys(users).forEach(key => {
-        const u = users[key];
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-slate-800 transition";
-        tr.innerHTML = `
-          <td class="p-2 font-semibold text-blue-300">${key}</td>
-          <td class="p-2">${u.name}</td>
-          <td class="p-2">
-            <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-400 w-36">
-          </td>
-          <td class="p-2 flex items-center gap-1">
-            <button onclick="updatePassword('${key}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold">Salva</button>
-            ${u.role !== 'admin' ? `<button onclick="deleteUser('${key}')" class="bg-red-600/80 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">Elimina</button>` : '<span class="text-slate-500 text-[10px]">Admin</span>'}
-          </td>
-        `;
-        table.appendChild(tr);
-      });
     }
 
     function populateCoAuthorsCheckboxes() {
@@ -497,7 +710,6 @@
       currentUser = null;
       document.getElementById("loginScreen").classList.remove("hidden");
       document.getElementById("dashboardScreen").classList.add("hidden");
-      document.getElementById("adminPanel").classList.add("hidden");
     }
 
     async function saveDraft() {
