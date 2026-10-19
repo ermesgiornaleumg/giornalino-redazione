@@ -182,6 +182,12 @@
           </div>
         </div>
 
+        <!-- AVVISO REVISIONE PER CAPOREDATTORE -->
+        <div id="editingTargetNotice" class="hidden bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-xl text-xs flex justify-between items-center">
+          <span>Stai modificando l'articolo di: <strong id="targetAuthorName"></strong>. L'articolo rimarrà intestato a questo autore.</span>
+          <button onclick="resetEditingTarget()" class="text-red-500 hover:text-red-700 font-bold ml-2">Annulla Revisione</button>
+        </div>
+
         <div>
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg sm:text-xl font-bold text-slate-900">Nuovo Articolo</h2>
@@ -321,6 +327,7 @@
     let sharedDrafts = [];
     let selectedDraftIndex = null;
     let currentUser = null;
+    let activeEditingDraft = null; // Memorizza l'autore originale durante la modifica
 
     const quill = new Quill('#editor', {
       theme: 'snow',
@@ -452,18 +459,27 @@
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
 
+      // Se il caporedattore sta modificando una bozza esistente, mantiene il nome originale
+      const authorName = activeEditingDraft ? activeEditingDraft.author : currentUser.name;
+      const authorLink = activeEditingDraft ? activeEditingDraft.authorLink : currentUser.link;
+
       const newDraft = {
-        id: Date.now(),
+        id: activeEditingDraft ? activeEditingDraft.id : Date.now(),
         title,
         content,
         category,
-        author: currentUser.name,
-        authorLink: currentUser.link,
+        author: authorName,
+        authorLink: authorLink,
         coAuthorKeys: selectedCoAuthorKeys,
         date: new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'})
       };
 
       await loadSharedDrafts();
+
+      if (activeEditingDraft) {
+        sharedDrafts = sharedDrafts.filter(d => d.id !== activeEditingDraft.id);
+      }
+      
       sharedDrafts.push(newDraft);
 
       await fetch(WORKER_URL + "drafts", {
@@ -473,11 +489,13 @@
       });
 
       localStorage.removeItem(`auto_draft_${currentUser.key}`);
+      resetEditingTarget();
       document.getElementById("postTitle").value = "";
       quill.setContents([]);
       document.querySelectorAll('.coauthor-checkbox').forEach(cb => cb.checked = false);
 
-      alert("✓ Bozza inviata con successo al Caporedattore per la revisione!");
+      alert("✓ Bozza inviata con successo per la revisione!");
+      renderSharedDraftsTable();
     }
 
     function renderSharedDraftsTable() {
@@ -521,21 +539,32 @@
       if (selectedDraftIndex === null) return;
       const draft = sharedDrafts[selectedDraftIndex];
 
-      // Carica i dati della bozza nell'editor
+      activeEditingDraft = draft; // Salva la bozza in revisione
+
       document.getElementById("postTitle").value = draft.title || "";
       if (draft.category) {
         document.getElementById("postCategory").value = draft.category;
       }
       quill.clipboard.dangerouslyPasteHTML(draft.content || "");
 
-      // Seleziona eventuali co-autori salvati
+      document.getElementById("authorTagDisplay").value = draft.author;
+      document.getElementById("targetAuthorName").innerText = draft.author;
+      document.getElementById("editingTargetNotice").classList.remove("hidden");
+
       document.querySelectorAll('.coauthor-checkbox').forEach(cb => {
         cb.checked = (draft.coAuthorKeys && draft.coAuthorKeys.includes(cb.value));
       });
 
       closeDraftModal();
       switchTab('editor');
-      alert("✏️ La bozza di " + draft.author + " è stata caricata nell'editor! Puoi modificarla, inviarla nuovamente in revisione o pubblicarla direttamente.");
+    }
+
+    function resetEditingTarget() {
+      activeEditingDraft = null;
+      document.getElementById("editingTargetNotice").classList.add("hidden");
+      if (currentUser) {
+        document.getElementById("authorTagDisplay").value = currentUser.name;
+      }
     }
 
     async function deleteCurrentDraft() {
@@ -552,8 +581,8 @@
     }
 
     async function publishCurrentDraftToBlogger() {
-      if (selectedDraftIndex === null) return;
-      const draft = sharedDrafts[selectedDraftIndex];
+      if (selectedDraftIndex === null && !activeEditingDraft) return;
+      const draft = activeEditingDraft || sharedDrafts[selectedDraftIndex];
 
       let byline = `<p><em><strong>Scritto da <a href="${draft.authorLink}" target="_blank">${draft.author}</a></strong>`;
       const labels = [draft.category || "Generale", draft.author];
@@ -586,14 +615,15 @@
         const result = await response.json();
 
         if (response.ok && result.success) {
-          alert("✓ Bozza approvata e inviata con successo su Blogger!");
-          sharedDrafts.splice(selectedDraftIndex, 1);
+          alert("✓ Bozza approvata e inviata con successo su Blogger a nome di " + draft.author + "!");
+          sharedDrafts = sharedDrafts.filter(d => d.id !== draft.id);
           await fetch(WORKER_URL + "drafts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ drafts: sharedDrafts })
           });
           closeDraftModal();
+          resetEditingTarget();
           renderSharedDraftsTable();
         } else {
           alert("Errore invio Blogger: " + (result.error || "Impossibile salvare."));
@@ -976,8 +1006,11 @@
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
 
-      let byline = `<p><em><strong>Scritto da <a href="${currentUser.link}" target="_blank">${currentUser.name}</a></strong>`;
-      const labels = [category, currentUser.name];
+      // Se il caporedattore sta revisionando la bozza di un redattore, attribuisce la bozza all'autore originale
+      const mainAuthor = activeEditingDraft ? { name: activeEditingDraft.author, link: activeEditingDraft.authorLink } : currentUser;
+
+      let byline = `<p><em><strong>Scritto da <a href="${mainAuthor.link}" target="_blank">${mainAuthor.name}</a></strong>`;
+      const labels = [category, mainAuthor.name];
 
       if (selectedCoAuthorKeys.length > 0) {
         const coAuthorsLinks = selectedCoAuthorKeys.map(key => {
@@ -1007,8 +1040,19 @@
 
         if (response.ok && result.success) {
           statusMsg.className = "text-sm font-medium text-emerald-600";
-          statusMsg.innerText = "✓ Bozza salvata con successo su Blogger!";
+          statusMsg.innerText = "✓ Bozza pubblicata con successo a nome di " + mainAuthor.name + "!";
           
+          if (activeEditingDraft) {
+            sharedDrafts = sharedDrafts.filter(d => d.id !== activeEditingDraft.id);
+            await fetch(WORKER_URL + "drafts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ drafts: sharedDrafts })
+            });
+            resetEditingTarget();
+            renderSharedDraftsTable();
+          }
+
           localStorage.removeItem(`auto_draft_${currentUser.key}`);
           document.getElementById("postTitle").value = "";
           quill.setContents([]);
