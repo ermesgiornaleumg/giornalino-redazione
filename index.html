@@ -107,6 +107,7 @@
         <div class="flex border-b border-slate-200 gap-2">
           <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition">📅 Calendario & Prenotazioni</button>
           <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">✍️ Scrittura Articolo</button>
+          <button id="tabStatsBtn" onclick="switchTab('stats')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">📊 Statistiche Articoli</button>
           <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition">⚙️ Gestione & Ruoli</button>
         </div>
       </div>
@@ -148,30 +149,9 @@
         </div>
       </div>
 
-      <!-- SCHEDA 2: AREA EDITOR ARTICOLO & STATISTICHE -->
+      <!-- SCHEDA 2: AREA EDITOR ARTICOLO -->
       <main id="tabEditor" class="hidden max-w-4xl mx-auto my-6 p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-slate-200 space-y-6">
         
-        <!-- SEZIONE STATISTICHE ARTICOLI (SE ABILITATA DALL'ADMIN) -->
-        <div id="statsSectionArea" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-3">
-          <h3 class="text-sm font-bold text-emerald-900 flex items-center justify-between">
-            <span>📈 Articoli Pubblicati & Statistiche Redazione</span>
-            <button onclick="loadArticleStats()" class="text-xs text-emerald-700 hover:underline">🔄 Aggiorna</button>
-          </h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-700">
-              <thead class="bg-emerald-100/60 uppercase text-[10px] text-emerald-800">
-                <tr>
-                  <th class="p-2">Data</th>
-                  <th class="p-2">Titolo Articolo</th>
-                  <th class="p-2">Tag / Categoria</th>
-                  <th class="p-2">Link</th>
-                </tr>
-              </thead>
-              <tbody id="articleStatsTable" class="divide-y divide-emerald-200/50"></tbody>
-            </table>
-          </div>
-        </div>
-
         <!-- BOZZE IN REVISIONE -->
         <div id="sharedDraftsSection" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
           <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">📋 Bozze Inviate dai Redattori per Revisione</h3>
@@ -242,7 +222,42 @@
         </div>
       </main>
 
-      <!-- SCHEDA 3: PANNELLO ADMIN & CAPOREDATTORE -->
+      <!-- SCHEDA 3: SEZIONE DEDICATA STATISTICHE ARTICOLI -->
+      <div id="tabStats" class="hidden max-w-4xl mx-auto my-6 px-4 space-y-6">
+        
+        <!-- MESSAGGIO DI ACCESSO NEGATO PER CHI NON HA IL PERMESSO -->
+        <div id="statsPermissionNotice" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
+          <div class="text-4xl mb-3">🔒</div>
+          <h3 class="text-lg font-bold text-slate-800">Visualizzazione Statistiche Non Abilitata</h3>
+          <p class="text-xs text-slate-500 mt-1">L'accesso a questa sezione deve essere abilitato individualmente dall'Amministratore della redazione.</p>
+        </div>
+
+        <div id="statsContentArea" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex justify-between items-center border-b pb-3">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">📊 Statistiche & Visualizzazioni Articoli</h3>
+              <p class="text-xs text-slate-500">Consulta gli articoli pubblicati sul giornale con i relativi dati di lettura e tag.</p>
+            </div>
+            <button onclick="loadArticleStats()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-3 py-1.5 rounded-lg border border-emerald-200 transition">🔄 Aggiorna Dati</button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+              <thead class="bg-slate-50 uppercase text-[10px] text-slate-400">
+                <tr>
+                  <th class="p-2">Data</th>
+                  <th class="p-2">Titolo Articolo</th>
+                  <th class="p-2">Tag / Categoria</th>
+                  <th class="p-2">Link Post</th>
+                </tr>
+              </thead>
+              <tbody id="articleStatsTable" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDA 4: PANNELLO ADMIN & CAPOREDATTORE -->
       <div id="tabAdmin" class="hidden max-w-4xl mx-auto my-6 space-y-6 px-4">
         
         <div id="nonAccessibleNotice" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
@@ -253,15 +268,6 @@
 
         <div id="adminContentArea" class="space-y-6">
           
-          <!-- CONTROLLO VISIBILITÀ STATISTICHE PER ADMIN -->
-          <div id="adminSettingsControl" class="bg-indigo-900 text-white p-5 rounded-2xl shadow-md border border-indigo-800 flex justify-between items-center">
-            <div>
-              <h4 class="font-bold text-sm text-indigo-200">📊 Abilita Visualizzazione Statistiche Articoli ai Redattori</h4>
-              <p class="text-xs text-indigo-300 mt-0.5">Se attivato, i redattori vedranno l'elenco e la classifica dei post pubblicati nella scheda Scrittura.</p>
-            </div>
-            <button id="toggleStatsBtn" onclick="toggleStatsVisibility()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition border border-indigo-400">Caricamento...</button>
-          </div>
-
           <!-- SEZIONE INVIO COMUNICATI -->
           <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
             <div>
@@ -296,7 +302,7 @@
 
           <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
           <div id="adminPanel" class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
-            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">⚙️ Pannello Amministrazione Autori e Registro Accessi</h3>
+            <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">⚙️ Pannello Amministrazione Autori & Permessi singoli</h3>
 
             <!-- Form Nuovo Autore -->
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-slate-800 p-4 rounded-xl">
@@ -327,6 +333,7 @@
                     <th class="p-2">Nome Completo</th>
                     <th class="p-2">Ruolo</th>
                     <th class="p-2">Ultimo Accesso</th>
+                    <th class="p-2">Permesso Statistiche</th>
                     <th class="p-2">Password</th>
                     <th class="p-2">Azione</th>
                   </tr>
@@ -351,7 +358,6 @@
     let calendarEvents = [];
     let sharedDrafts = [];
     let announcementsHistory = [];
-    let systemSettings = { showStatsToAuthors: false };
     let activeAnnouncementModalIndex = null;
     let selectedDraftIndex = null;
     let currentUser = null;
@@ -384,14 +390,6 @@
     }
     fetchUsers();
 
-    async function loadSettings() {
-      try {
-        const res = await fetch(WORKER_URL + "settings");
-        systemSettings = await res.json();
-        updateSettingsUI();
-      } catch(e) {}
-    }
-
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       document.getElementById("loginError").classList.add("hidden");
@@ -400,7 +398,6 @@
       btn.innerText = "Verifica in corso...";
 
       await fetchUsers();
-      await loadSettings();
 
       const u = document.getElementById("username").value.trim().toLowerCase();
       const p = document.getElementById("password").value.trim();
@@ -433,11 +430,9 @@
           
           if (currentUser.role === "admin") {
             document.getElementById("adminPanel").classList.remove("hidden");
-            document.getElementById("adminSettingsControl").classList.remove("hidden");
             renderAdminUsers();
           } else {
             document.getElementById("adminPanel").classList.add("hidden");
-            document.getElementById("adminSettingsControl").classList.add("hidden");
           }
 
           document.getElementById("sharedDraftsSection").classList.remove("hidden");
@@ -447,14 +442,6 @@
           document.getElementById("nonAccessibleNotice").classList.remove("hidden");
           document.getElementById("adminContentArea").classList.add("hidden");
           document.getElementById("sharedDraftsSection").classList.add("hidden");
-        }
-
-        // Controllo Visibilità Statistiche
-        if (currentUser.role === "admin" || currentUser.role === "head_editor" || systemSettings.showStatsToAuthors) {
-          document.getElementById("statsSectionArea").classList.remove("hidden");
-          loadArticleStats();
-        } else {
-          document.getElementById("statsSectionArea").classList.add("hidden");
         }
 
         populateCoAuthorsCheckboxes();
@@ -472,10 +459,12 @@
     function switchTab(tabName) {
       document.getElementById("tabCalendar").classList.add("hidden");
       document.getElementById("tabEditor").classList.add("hidden");
+      document.getElementById("tabStats").classList.add("hidden");
       document.getElementById("tabAdmin").classList.add("hidden");
 
       document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
       document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
+      document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
       document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition";
 
       if (tabName === 'calendar') {
@@ -484,35 +473,23 @@
       } else if (tabName === 'editor') {
         document.getElementById("tabEditor").classList.remove("hidden");
         document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+      } else if (tabName === 'stats') {
+        document.getElementById("tabStats").classList.remove("hidden");
+        document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
+        
+        // Verifica permessi per le statistiche
+        if (currentUser.role === "admin" || currentUser.role === "head_editor" || currentUser.canViewStats) {
+          document.getElementById("statsContentArea").classList.remove("hidden");
+          document.getElementById("statsPermissionNotice").classList.add("hidden");
+          loadArticleStats();
+        } else {
+          document.getElementById("statsContentArea").classList.add("hidden");
+          document.getElementById("statsPermissionNotice").classList.remove("hidden");
+        }
       } else if (tabName === 'admin') {
         document.getElementById("tabAdmin").classList.remove("hidden");
         document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition";
       }
-    }
-
-    // GESTIONE IMPOSTAZIONI ADMIN (TOGGLE STATISTICHE)
-    function updateSettingsUI() {
-      const btn = document.getElementById("toggleStatsBtn");
-      if (systemSettings.showStatsToAuthors) {
-        btn.innerText = "✓ Visibile ai Redattori";
-        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition shadow";
-      } else {
-        btn.innerText = "✕ Nascosto ai Redattori";
-        btn.className = "bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-bold text-xs transition shadow";
-      }
-    }
-
-    async function toggleStatsVisibility() {
-      systemSettings.showStatsToAuthors = !systemSettings.showStatsToAuthors;
-      updateSettingsUI();
-
-      await fetch(WORKER_URL + "settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(systemSettings)
-      });
-
-      alert("✓ Visibilità statistiche aggiornata!");
     }
 
     // CARICAMENTO STATISTICHE POST
@@ -528,12 +505,12 @@
         if (data.posts && data.posts.length > 0) {
           data.posts.forEach(post => {
             const tr = document.createElement("tr");
-            tr.className = "hover:bg-emerald-100/40 transition border-b border-emerald-200/50";
+            tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
             tr.innerHTML = `
-              <td class="p-2 font-mono text-[10px] text-slate-500">${post.published}</td>
+              <td class="p-2 font-mono text-[10px] text-slate-400">${post.published}</td>
               <td class="p-2 font-semibold text-slate-800">${post.title}</td>
               <td class="p-2 text-slate-500">${post.labels.join(", ")}</td>
-              <td class="p-2"><a href="${post.url}" target="_blank" class="text-emerald-700 hover:underline font-bold text-[10px]">🔗 Apri Post</a></td>
+              <td class="p-2"><a href="${post.url}" target="_blank" class="text-blue-600 hover:underline font-bold text-[10px]">🔗 Apri Post</a></td>
             `;
             tbody.appendChild(tr);
           });
@@ -543,6 +520,20 @@
       } catch(e) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-red-500 italic">Errore caricamento dati.</td></tr>`;
       }
+    }
+
+    // TOGGLE PERMESSO STATISTICHE PER SINGOLO UTENTE
+    async function toggleUserStatsPermission(key) {
+      users[key].canViewStats = !users[key].canViewStats;
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      renderAdminUsers();
+      alert(`✓ Permesso statistiche aggiornato per l'utente "${users[key].name}"!`);
     }
 
     // BOZZE CONDIVISE
@@ -948,7 +939,7 @@
 
       if (!uKey || !name || !pass) return alert("Compila i campi obbligatori!");
 
-      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role, lastLogin: "-" };
+      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role, lastLogin: "-", canViewStats: false };
 
       await fetch(WORKER_URL + "users", {
         method: "POST",
@@ -1009,6 +1000,11 @@
             </select>
           </td>
           <td class="p-2 text-slate-400 font-mono text-[10px]">${u.lastLogin || '-'}</td>
+          <td class="p-2">
+            <button onclick="toggleUserStatsPermission('${key}')" class="px-2 py-1 rounded text-[10px] font-bold ${u.canViewStats ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 border border-slate-600'}">
+              ${u.canViewStats ? '✓ Abilitato' : '✕ Disabilitato'}
+            </button>
+          </td>
           <td class="p-2">
             <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 w-32">
           </td>
