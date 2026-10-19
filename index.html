@@ -23,9 +23,22 @@
       </div>
       <div id="announcementContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line py-2"></div>
       <div class="text-right pt-2 border-t">
-        <button onclick="closeAnnouncementModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">
+        <button onclick="confirmReadAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition shadow">
           Ho Capito
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Dettagli Letture Comunicato -->
+  <div id="readDetailsModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-base font-bold text-slate-900">📊 Stato Lettura Comunicato</h3>
+        <button onclick="closeReadDetailsModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      </div>
+      <div id="readDetailsBody" class="space-y-4 text-xs">
+        <!-- Lista Utenti e Stato Lettura -->
       </div>
     </div>
   </div>
@@ -252,17 +265,42 @@
         </div>
 
         <div id="adminContentArea" class="space-y-6">
-          <!-- SEZIONE INVIO COMUNICATI (Per Admin e Caporedattori) -->
-          <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
-              📢 Pubblica Avviso / Comunicato Interno
-            </h3>
-            <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
+          <!-- SEZIONE INVIO COMUNICATI & STORICO -->
+          <div id="announcementManager" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                📢 Pubblica Avviso / Comunicato Interno
+              </h3>
+              <p class="text-xs text-slate-500 mb-4">L'avviso apparirà come pop-up a tutti i redattori al momento del loro prossimo login.</p>
 
-            <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
-            <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
-              Invia Avviso alla Redazione
-            </button>
+              <textarea id="announcementText" rows="3" placeholder="Scrivi il messaggio per la redazione..." class="w-full p-3 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
+              <button onclick="publishAnnouncement()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+                Invia Avviso alla Redazione
+              </button>
+            </div>
+
+            <!-- TABELLA STORICO COMUNICATI E LETTURE -->
+            <div class="border-t pt-4">
+              <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+                <span>📋 Storico Comunicati & Tracciamento Letture</span>
+                <button onclick="loadAnnouncementsHistory()" class="text-xs text-blue-600 hover:underline">🔄 Aggiorna</button>
+              </h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                  <thead class="bg-slate-50 uppercase text-[10px] text-slate-400">
+                    <tr>
+                      <th class="p-2">Data</th>
+                      <th class="p-2">Messaggio</th>
+                      <th class="p-2">Autore</th>
+                      <th class="p-2">Stato Lettura</th>
+                      <th class="p-2">Azione</th>
+                    </tr>
+                  </thead>
+                  <tbody id="announcementsHistoryTable" class="divide-y divide-slate-100">
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <!-- SEZIONE AMMINISTRAZIONE UTENTI (Solo Admin) -->
@@ -325,9 +363,11 @@
     let users = {};
     let calendarEvents = [];
     let sharedDrafts = [];
+    let announcementsHistory = [];
+    let activeAnnouncementModalIndex = null;
     let selectedDraftIndex = null;
     let currentUser = null;
-    let activeEditingDraft = null; // Memorizza l'autore originale durante la modifica
+    let activeEditingDraft = null;
 
     const quill = new Quill('#editor', {
       theme: 'snow',
@@ -396,6 +436,7 @@
 
           document.getElementById("sharedDraftsSection").classList.remove("hidden");
           loadSharedDrafts();
+          loadAnnouncementsHistory();
         } else {
           document.getElementById("nonAccessibleNotice").classList.remove("hidden");
           document.getElementById("adminContentArea").classList.add("hidden");
@@ -436,7 +477,7 @@
       }
     }
 
-    // BOZZE CONDIVISE CON CAPOREDATTORE
+    // BOZZE CONDIVISE
     async function loadSharedDrafts() {
       try {
         const res = await fetch(WORKER_URL + "drafts");
@@ -459,7 +500,6 @@
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
 
-      // Se il caporedattore sta modificando una bozza esistente, mantiene il nome originale
       const authorName = activeEditingDraft ? activeEditingDraft.author : currentUser.name;
       const authorLink = activeEditingDraft ? activeEditingDraft.authorLink : currentUser.link;
 
@@ -539,7 +579,7 @@
       if (selectedDraftIndex === null) return;
       const draft = sharedDrafts[selectedDraftIndex];
 
-      activeEditingDraft = draft; // Salva la bozza in revisione
+      activeEditingDraft = draft;
 
       document.getElementById("postTitle").value = draft.title || "";
       if (draft.category) {
@@ -633,6 +673,158 @@
       }
     }
 
+    // STORICO COMUNICATI E CONFERME LETTURA
+    async function loadAnnouncementsHistory() {
+      try {
+        const res = await fetch(WORKER_URL + "announcements");
+        const data = await res.json();
+        announcementsHistory = data.announcements || [];
+        renderAnnouncementsHistoryTable();
+      } catch(e) {}
+    }
+
+    async function publishAnnouncement() {
+      const text = document.getElementById("announcementText").value.trim();
+      if (!text) return alert("Inserisci un testo per l'avviso!");
+
+      const newAnnouncement = {
+        id: Date.now(),
+        text: text,
+        author: currentUser.name,
+        date: new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'}),
+        reads: {} // Mappa degli utenti che hanno confermato la lettura
+      };
+
+      await loadAnnouncementsHistory();
+      announcementsHistory.unshift(newAnnouncement);
+
+      await fetch(WORKER_URL + "announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ announcements: announcementsHistory })
+      });
+
+      document.getElementById("announcementText").value = "";
+      renderAnnouncementsHistoryTable();
+      alert("✓ Avviso pubblicato con successo per tutta la redazione!");
+    }
+
+    async function checkAnnouncements() {
+      try {
+        await loadAnnouncementsHistory();
+        if (announcementsHistory.length > 0) {
+          // Trova il comunicato più recente non ancora letto dall'utente loggato
+          const unreadIndex = announcementsHistory.findIndex(a => !a.reads || !a.reads[currentUser.key]);
+          if (unreadIndex !== -1) {
+            activeAnnouncementModalIndex = unreadIndex;
+            const ann = announcementsHistory[unreadIndex];
+            document.getElementById("announcementContent").innerText = ann.text;
+            document.getElementById("announcementDate").innerText = "Pubblicato il: " + ann.date + " da " + ann.author;
+            document.getElementById("announcementModal").classList.remove("hidden");
+          }
+        }
+      } catch(e) {}
+    }
+
+    async function confirmReadAnnouncement() {
+      if (activeAnnouncementModalIndex !== null && announcementsHistory[activeAnnouncementModalIndex]) {
+        const ann = announcementsHistory[activeAnnouncementModalIndex];
+        if (!ann.reads) ann.reads = {};
+        
+        ann.reads[currentUser.key] = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+
+        await fetch(WORKER_URL + "announcements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ announcements: announcementsHistory })
+        });
+      }
+      document.getElementById("announcementModal").classList.add("hidden");
+      activeAnnouncementModalIndex = null;
+    }
+
+    function renderAnnouncementsHistoryTable() {
+      const tbody = document.getElementById("announcementsHistoryTable");
+      tbody.innerHTML = "";
+
+      if (announcementsHistory.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">Nessun comunicato in archivio.</td></tr>`;
+        return;
+      }
+
+      const totalUsersCount = Object.keys(users).length;
+
+      announcementsHistory.forEach((ann, idx) => {
+        const readsCount = ann.reads ? Object.keys(ann.reads).length : 0;
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="p-2 text-[10px] text-slate-400 font-mono">${ann.date}</td>
+          <td class="p-2 font-medium text-slate-800 max-w-xs truncate">${ann.text}</td>
+          <td class="p-2 text-slate-600">${ann.author}</td>
+          <td class="p-2">
+            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold border border-blue-200">
+              👁️ ${readsCount} / ${totalUsersCount} letture
+            </span>
+          </td>
+          <td class="p-2 flex gap-1">
+            <button onclick="openReadDetailsModal(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-semibold">👁️ Dettagli Letture</button>
+            <button onclick="deleteAnnouncement(${ann.id})" class="bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-semibold border border-red-200">Elimina</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openReadDetailsModal(index) {
+      const ann = announcementsHistory[index];
+      const container = document.getElementById("readDetailsBody");
+      container.innerHTML = `<p class="font-bold text-slate-900 border-b pb-2">Messaggio: "${ann.text}"</p>`;
+
+      const totalUsers = Object.keys(users);
+      let readHtml = `<div class="space-y-1 mt-2"><h5 class="font-bold text-emerald-700">✅ Hanno letto il messaggio:</h5><ul class="divide-y divide-slate-100 border rounded-lg p-2 bg-slate-50">`;
+      let unreadHtml = `<div class="space-y-1 mt-3"><h5 class="font-bold text-amber-700">⏳ Non hanno ancora letto:</h5><ul class="divide-y divide-slate-100 border rounded-lg p-2 bg-slate-50">`;
+
+      let hasRead = false;
+      let hasUnread = false;
+
+      totalUsers.forEach(uKey => {
+        const userName = users[uKey].name;
+        if (ann.reads && ann.reads[uKey]) {
+          hasRead = true;
+          readHtml += `<li class="py-1 flex justify-between items-center"><span class="font-semibold text-slate-800">${userName}</span> <span class="text-[10px] text-slate-400 font-mono">${ann.reads[uKey]}</span></li>`;
+        } else {
+          hasUnread = true;
+          unreadHtml += `<li class="py-1 text-slate-500">${userName}</li>`;
+        }
+      });
+
+      if (!hasRead) readHtml += `<li class="py-1 text-slate-400 italic">Nessun utente ha ancora letto.</li>`;
+      if (!hasUnread) unreadHtml += `<li class="py-1 text-slate-400 italic">Tutti i redattori hanno letto il messaggio.</li>`;
+
+      readHtml += `</ul></div>`;
+      unreadHtml += `</ul></div>`;
+
+      container.innerHTML += readHtml + unreadHtml;
+      document.getElementById("readDetailsModal").classList.remove("hidden");
+    }
+
+    function closeReadDetailsModal() {
+      document.getElementById("readDetailsModal").classList.add("hidden");
+    }
+
+    async function deleteAnnouncement(id) {
+      if (confirm("Sei sicuro di voler eliminare questo comunicato dallo storico?")) {
+        announcementsHistory = announcementsHistory.filter(a => a.id !== id);
+        await fetch(WORKER_URL + "announcements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ announcements: announcementsHistory })
+        });
+        renderAnnouncementsHistoryTable();
+      }
+    }
+
     // CALENDARIO
     async function loadCalendarEvents() {
       try {
@@ -695,44 +887,6 @@
         `;
         tbody.appendChild(tr);
       });
-    }
-
-    // ANUNCIOS / COMUNICATI
-    async function publishAnnouncement() {
-      const text = document.getElementById("announcementText").value.trim();
-      if (!text) return alert("Inserisci un testo per l'avviso!");
-
-      const announcement = { text, date: new Date().toLocaleDateString('it-IT') };
-
-      await fetch(WORKER_URL + "announcements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ announcement })
-      });
-
-      document.getElementById("announcementText").value = "";
-      alert("✓ Avviso pubblicato con successo per tutta la redazione!");
-    }
-
-    async function checkAnnouncements() {
-      try {
-        const res = await fetch(WORKER_URL + "announcements");
-        const data = await res.json();
-        if (data.announcement) {
-          const lastSeen = localStorage.getItem(`seen_announcement_${currentUser.key}`);
-          if (lastSeen !== data.announcement.text) {
-            document.getElementById("announcementContent").innerText = data.announcement.text;
-            document.getElementById("announcementDate").innerText = "Pubblicato il: " + data.announcement.date;
-            document.getElementById("announcementModal").classList.remove("hidden");
-          }
-        }
-      } catch(e) {}
-    }
-
-    function closeAnnouncementModal() {
-      const text = document.getElementById("announcementContent").innerText;
-      localStorage.setItem(`seen_announcement_${currentUser.key}`, text);
-      document.getElementById("announcementModal").classList.add("hidden");
     }
 
     // CAMBIO PASSWORD UTENTE
@@ -1006,7 +1160,6 @@
       const checkedBoxes = document.querySelectorAll('.coauthor-checkbox:checked');
       const selectedCoAuthorKeys = Array.from(checkedBoxes).map(cb => cb.value);
 
-      // Se il caporedattore sta revisionando la bozza di un redattore, attribuisce la bozza all'autore originale
       const mainAuthor = activeEditingDraft ? { name: activeEditingDraft.author, link: activeEditingDraft.authorLink } : currentUser;
 
       let byline = `<p><em><strong>Scritto da <a href="${mainAuthor.link}" target="_blank">${mainAuthor.name}</a></strong>`;
