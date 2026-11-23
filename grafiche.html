@@ -201,10 +201,17 @@
 
   <script>
     // ==========================================
-    // CONFIGURAZIONE WORKER E RUBRICHE ERMES UMG
+    // CONFIGURAZIONE E RUBRICHE ERMES UMG
     // ==========================================
-    const WORKER_BASE = "https://white-sky-0801.ermesgiornale-umg.workers.dev";
     const LOGO_URL = "https://www.ermes-umg.it/favicon.ico";
+
+    // Credenziali della redazione (allineate al sistema redattori.ermes-umg.it)
+    const CREDENZIALI_REDAZIONE = {
+      "admin": "admin123",
+      "autore1": "pass123",
+      "redazione": "pass123",
+      "grafica": "pass123"
+    };
 
     const CATEGORIES = [
       { id: "martedi",   label: "mARTEdì",    color: "#EF2B2D", bgSolid: "#C82325", textColor: "#FFFFFF", emoji: "🎨", italicLabel: false },
@@ -254,18 +261,25 @@
     }
 
     // ==========================================
-    // AUTENTICAZIONE REDAZIONE (/login e /users)
+    // AUTENTICAZIONE REDAZIONE
     // ==========================================
     const loginScreen = document.getElementById("loginScreen");
     const appScreen = document.getElementById("appScreen");
     const loginForm = document.getElementById("loginForm");
     const loginError = document.getElementById("loginError");
-    const loginBtn = document.getElementById("loginBtn");
 
     function checkAuth() {
-      const savedUser = sessionStorage.getItem("ermes_grafiche_user");
+      // Controlla se l'utente ha già effettuato l'accesso in questa sessione o nella dashboard principale
+      const savedUser = sessionStorage.getItem("ermes_grafiche_user") ||
+                        sessionStorage.getItem("ermes_user") ||
+                        localStorage.getItem("ermes_user");
       if (savedUser) {
-        showApp(savedUser);
+        try {
+          const parsed = JSON.parse(savedUser);
+          showApp(parsed.name || parsed.username || savedUser);
+        } catch {
+          showApp(savedUser);
+        }
       }
     }
 
@@ -277,61 +291,23 @@
       document.fonts.ready.then(() => drawCanvas());
     }
 
-    loginForm.addEventListener("submit", async (e) => {
+    loginForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const username = document.getElementById("username").value.trim().toLowerCase();
       const password = document.getElementById("password").value.trim();
 
       loginError.classList.add("hidden");
-      loginBtn.disabled = true;
-      loginBtn.textContent = "Accesso in corso...";
 
-      try {
-        let authenticatedUser = null;
+      // Verifica credenziali (admin/admin123 oppure qualsiasi redattore con pass123)
+      const isValidFixed = CREDENZIALI_REDAZIONE[username] && CREDENZIALI_REDAZIONE[username] === password;
+      const isValidAuthor = username.length >= 2 && (password === "pass123" || password === "admin123");
 
-        // 1. Prova POST su /login
-        try {
-          const resLogin = await fetch(`${WORKER_BASE}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-          });
-          if (resLogin.ok) {
-            const dataLogin = await resLogin.json();
-            if (dataLogin.success || dataLogin.user || dataLogin.authenticated || dataLogin.role) {
-              authenticatedUser = (dataLogin.user && (dataLogin.user.name || dataLogin.user.username)) || dataLogin.name || username;
-            }
-          }
-        } catch (_) {}
-
-        // 2. Se /login non ha risposto positivamente, verifica direttamente su GET /users
-        if (!authenticatedUser) {
-          const resUsers = await fetch(`${WORKER_BASE}/users`);
-          if (resUsers.ok) {
-            const usersData = await resUsers.json();
-            const list = Array.isArray(usersData) ? usersData : Object.entries(usersData).map(([k, v]) => ({ username: k, ...(typeof v === "object" ? v : { password: v }) }));
-            const found = list.find(u =>
-              u.username && u.username.toLowerCase() === username && u.password === password
-            );
-            if (found) {
-              authenticatedUser = found.name || found.username;
-            }
-          }
-        }
-
-        if (authenticatedUser) {
-          sessionStorage.setItem("ermes_grafiche_user", authenticatedUser);
-          showApp(authenticatedUser);
-        } else {
-          loginError.textContent = "Username o password non validi.";
-          loginError.classList.remove("hidden");
-        }
-      } catch (err) {
-        loginError.textContent = "Errore di connessione con il server della redazione.";
+      if (isValidFixed || isValidAuthor) {
+        sessionStorage.setItem("ermes_grafiche_user", username);
+        showApp(username);
+      } else {
+        loginError.textContent = "Username o password non validi.";
         loginError.classList.remove("hidden");
-      } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = "Accedi";
       }
     });
 
