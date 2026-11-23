@@ -9,6 +9,23 @@
   <!-- Quill.js Editor -->
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <!-- Font per Grafiche Instagram -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:ital,wght@0,600;0,700;1,700&display=swap" rel="stylesheet">
+  <style>
+    .ig-canvas-container {
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 4 / 5;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    }
+    .ig-canvas-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
 
@@ -103,10 +120,11 @@
       </nav>
 
       <!-- BARRA DI NAVIGAZIONE A SCHEDE (TABS) -->
-      <div class="max-w-4xl mx-auto mt-6 px-4">
+      <div class="max-w-5xl mx-auto mt-6 px-4">
         <div class="flex border-b border-slate-200 gap-2 overflow-x-auto">
           <button id="tabCalendarBtn" onclick="switchTab('calendar')" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap">📅 Calendario & Prenotazioni</button>
           <button id="tabEditorBtn" onclick="switchTab('editor')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">✍️ Scrittura Articolo</button>
+          <button id="tabGraficheBtn" onclick="switchTab('grafiche')" class="hidden py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">🎨 Grafiche IG</button>
           <button id="tabStatsBtn" onclick="switchTab('stats')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">📊 Statistiche Articoli</button>
           <button id="tabAdminBtn" onclick="switchTab('admin')" class="py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap">⚙️ Gestione & Ruoli</button>
         </div>
@@ -220,6 +238,123 @@
           </div>
         </div>
       </main>
+
+      <!-- SCHEDA NUOVA: GENERATORE GRAFICHE INSTAGRAM -->
+      <div id="tabGrafiche" class="hidden max-w-5xl mx-auto my-6 px-4 space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-100">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">🎨 Generatore Grafiche Instagram (4:5)</h3>
+              <p class="text-xs text-slate-500">Crea e scarica i post pronti per Instagram senza usare Canva</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="igSaveDraftBtn" type="button" onclick="saveIgDraft()"
+                class="px-3 py-1.5 text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 rounded-lg transition">
+                💾 Salva Bozza Grafica
+              </button>
+              <button id="igLoadDraftBtn" type="button" onclick="loadIgDraft()"
+                class="hidden px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 rounded-lg transition">
+                📂 Ripristina Bozza
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <!-- Controlli a sinistra -->
+            <div class="lg:col-span-7 space-y-5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Rubrica / Categoria</label>
+                <div class="grid grid-cols-3 gap-2" id="igCategoryButtons"></div>
+              </div>
+
+              <div class="space-y-4 pt-3 border-t border-slate-100">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">2. Testi della Grafica</label>
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-semibold text-slate-700">Titolo Principale</span>
+                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer">
+                      <input type="checkbox" id="igUppercaseCheck" checked onchange="updateIgState()" class="rounded text-blue-600">
+                      Tutto Maiuscolo
+                    </label>
+                  </div>
+                  <textarea id="igTitleInput" rows="3" oninput="updateIgState()" placeholder="Scrivi qui il titolo dell'articolo..."
+                    class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium">L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE</textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dimensione Titolo (<span id="igFontSizeVal">62</span>px)</label>
+                    <input type="range" id="igFontSizeInput" min="40" max="86" value="62" oninput="updateIgState()" class="w-full accent-blue-600">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Stile Sottotitolo</label>
+                    <select id="igSubtitleStyleInput" onchange="updateIgState()" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white outline-none">
+                      <option value="normal">Normale (Estratto / Autore)</option>
+                      <option value="bold">Grassetto Maiuscolo (Nome Autore)</option>
+                      <option value="italic">Corsivo Grassetto (Citazione)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Sottotitolo / Autore / Breve Estratto (Opzionale)</label>
+                  <textarea id="igSubtitleInput" rows="2" oninput="updateIgState()" placeholder="Es. di Ludovica Mannarino oppure breve estratto..."
+                    class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-xs"></textarea>
+                </div>
+              </div>
+
+              <div class="space-y-3 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">3. Immagine di Sfondo</label>
+                  <button type="button" id="igRemoveImgBtn" onclick="removeIgImage()" class="text-xs text-red-600 hover:underline hidden">
+                    Rimuovi foto (usa colore rubrica)
+                  </button>
+                </div>
+
+                <label class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl cursor-pointer bg-slate-50 transition">
+                  <span class="text-base">🖼️</span>
+                  <span class="text-xs font-semibold text-slate-700" id="igFileLabel">Carica foto dal dispositivo...</span>
+                  <input type="file" id="igBgImageInput" accept="image/*" onchange="handleIgImageUpload(event)" class="hidden">
+                </label>
+
+                <div id="igImageControls" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Zoom Foto</label>
+                    <input type="range" id="igImgScale" min="1" max="2.5" step="0.05" value="1" oninput="updateIgState()" class="w-full accent-blue-600">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Sposta Orizzontale</label>
+                    <input type="range" id="igImgOffsetX" min="-400" max="400" step="5" value="0" oninput="updateIgState()" class="w-full accent-blue-600">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Sposta Verticale</label>
+                    <input type="range" id="igImgOffsetY" min="-400" max="400" step="5" value="0" oninput="updateIgState()" class="w-full accent-blue-600">
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                <span id="igStatusMsg" class="text-xs font-medium text-emerald-600"></span>
+                <button type="button" onclick="downloadIgGraphic()"
+                  class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-sm transition text-xs flex items-center justify-center gap-2">
+                  ⬇️ Scarica Grafica Instagram (PNG 1080×1350)
+                </button>
+              </div>
+            </div>
+
+            <!-- Anteprima a destra -->
+            <div class="lg:col-span-5 flex flex-col items-center">
+              <div class="w-full max-w-[400px] flex items-center justify-between mb-2 px-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Anteprima Live</span>
+                <span class="text-[11px] text-slate-400">1080 × 1350 px</span>
+              </div>
+              <div class="ig-canvas-container rounded-lg overflow-hidden bg-slate-800">
+                <canvas id="igPostCanvas" width="1080" height="1350"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- SCHEDA 3: SEZIONE DEDICATA STATISTICHE ARTICOLI & LETTORI BLOG -->
       <div id="tabStats" class="hidden max-w-4xl mx-auto my-6 px-4 space-y-6">
@@ -373,6 +508,12 @@
     let currentUser = null;
     let activeEditingDraft = null;
 
+    // ==========================================
+    // UTENTI ABILITATI ALLE GRAFICHE INSTAGRAM
+    // Inserisci qui gli username (in minuscolo) abilitati
+    // ==========================================
+    const ABILITATI_GRAFICHE = ["admin", "bruno.rachiele"];
+
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -433,6 +574,14 @@
         const roleLabel = currentUser.role === "admin" ? "Amministratore" : (currentUser.role === "head_editor" ? "Caporedattore" : "Redattore");
         document.getElementById("roleBadge").innerText = roleLabel;
 
+        // Mostra scheda Grafiche IG solo agli utenti abilitati
+        if (currentUser.role === "admin" || ABILITATI_GRAFICHE.includes(u)) {
+          document.getElementById("tabGraficheBtn").classList.remove("hidden");
+          initIgGenerator();
+        } else {
+          document.getElementById("tabGraficheBtn").classList.add("hidden");
+        }
+
         if (currentUser.role === "admin" || currentUser.role === "head_editor") {
           document.getElementById("nonAccessibleNotice").classList.add("hidden");
           document.getElementById("adminContentArea").classList.remove("hidden");
@@ -468,23 +617,34 @@
     function switchTab(tabName) {
       document.getElementById("tabCalendar").classList.add("hidden");
       document.getElementById("tabEditor").classList.add("hidden");
+      document.getElementById("tabGrafiche").classList.add("hidden");
       document.getElementById("tabStats").classList.add("hidden");
       document.getElementById("tabAdmin").classList.add("hidden");
 
-      document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
-      document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
-      document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
-      document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
+      const inactiveClass = "py-2.5 px-4 font-semibold text-sm text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center gap-2 transition whitespace-nowrap";
+      const activeClass = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
+
+      document.getElementById("tabCalendarBtn").className = inactiveClass;
+      document.getElementById("tabEditorBtn").className = inactiveClass;
+      document.getElementById("tabStatsBtn").className = inactiveClass;
+      document.getElementById("tabAdminBtn").className = inactiveClass;
+      if (!document.getElementById("tabGraficheBtn").classList.contains("hidden")) {
+        document.getElementById("tabGraficheBtn").className = inactiveClass;
+      }
 
       if (tabName === 'calendar') {
         document.getElementById("tabCalendar").classList.remove("hidden");
-        document.getElementById("tabCalendarBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
+        document.getElementById("tabCalendarBtn").className = activeClass;
       } else if (tabName === 'editor') {
         document.getElementById("tabEditor").classList.remove("hidden");
-        document.getElementById("tabEditorBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
+        document.getElementById("tabEditorBtn").className = activeClass;
+      } else if (tabName === 'grafiche') {
+        document.getElementById("tabGrafiche").classList.remove("hidden");
+        document.getElementById("tabGraficheBtn").className = activeClass;
+        document.fonts.ready.then(() => drawIgCanvas());
       } else if (tabName === 'stats') {
         document.getElementById("tabStats").classList.remove("hidden");
-        document.getElementById("tabStatsBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
+        document.getElementById("tabStatsBtn").className = activeClass;
         
         if (currentUser.role === "admin" || currentUser.role === "head_editor" || currentUser.canViewStats) {
           document.getElementById("statsContentArea").classList.remove("hidden");
@@ -496,8 +656,419 @@
         }
       } else if (tabName === 'admin') {
         document.getElementById("tabAdmin").classList.remove("hidden");
-        document.getElementById("tabAdminBtn").className = "py-2.5 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 transition whitespace-nowrap";
+        document.getElementById("tabAdminBtn").className = activeClass;
       }
+    }
+
+    // ==========================================
+    // MOTORE GENERATORE GRAFICHE INSTAGRAM
+    // ==========================================
+    const IG_CATEGORIES = [
+      { id: "martedi",   label: "mARTEdì",    color: "#EF2B2D", bgSolid: "#C82325", textColor: "#FFFFFF", emoji: "🎨", italicLabel: false },
+      { id: "musica",    label: "MUSICA",     color: "#FF6B9E", bgSolid: "#D94B7C", textColor: "#FFFFFF", emoji: "🎵", italicLabel: false },
+      { id: "cultura",   label: "CULTURA",    color: "#39C16C", bgSolid: "#2A9D54", textColor: "#FFFFFF", emoji: "✳️", italicLabel: false },
+      { id: "attualita", label: "ATTUALITA'", color: "#D95338", bgSolid: "#D95338", textColor: "#FFFFFF", emoji: "📰", italicLabel: true  },
+      { id: "pensieri",  label: "PENSIERI",   color: "#F7D560", bgSolid: "#E5BE3B", textColor: "#FFFFFF", emoji: "💭", italicLabel: false },
+      { id: "umgnotizie",label: "UMGnotizie", color: "#D4C419", bgSolid: "#B8A912", textColor: "#FFFFFF", emoji: "🎓", italicLabel: false },
+      { id: "sport",     label: "SPORT",      color: "#7B5E52", bgSolid: "#7B5E52", textColor: "#FFFFFF", emoji: "⚽", italicLabel: true  },
+      { id: "curiosita", label: "CURIOSITA'", color: "#98C95E", bgSolid: "#98C95E", textColor: "#FFFFFF", emoji: "🤔", italicLabel: true  },
+      { id: "libri",     label: "LIBRI",      color: "#7AD3C6", bgSolid: "#7AD3C6", textColor: "#FFFFFF", emoji: "📚", italicLabel: true  }
+    ];
+
+    let igState = {
+      category: IG_CATEGORIES[2],
+      title: "L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE",
+      uppercase: true,
+      fontSize: 62,
+      subtitle: "",
+      subtitleStyle: "normal",
+      bgImageDataUrl: null,
+      imgScale: 1,
+      imgOffsetX: 0,
+      imgOffsetY: 0
+    };
+
+    let igLogoImg = new Image();
+    igLogoImg.crossOrigin = "anonymous";
+    let igLogoLoaded = false;
+    let igBgImageObj = null;
+
+    function initIgGenerator() {
+      fetch("https://www.ermes-umg.it/favicon.ico")
+        .then(res => res.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            igLogoImg.onload = () => { igLogoLoaded = true; drawIgCanvas(); };
+            igLogoImg.src = reader.result;
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => {
+          igLogoImg.onload = () => { igLogoLoaded = true; drawIgCanvas(); };
+          igLogoImg.src = "https://www.ermes-umg.it/favicon.ico";
+        });
+
+      renderIgCategoryButtons();
+      if (localStorage.getItem("ermes_ig_draft_v1")) {
+        document.getElementById("igLoadDraftBtn").classList.remove("hidden");
+      }
+      document.fonts.ready.then(() => drawIgCanvas());
+    }
+
+    function renderIgCategoryButtons() {
+      const container = document.getElementById("igCategoryButtons");
+      container.innerHTML = "";
+      IG_CATEGORIES.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isSelected = igState.category.id === cat.id;
+        btn.className = `px-3 py-2 rounded-lg text-xs font-bold tracking-wide transition flex items-center justify-between border cursor-pointer ${
+          isSelected ? "ring-2 ring-slate-900 border-slate-900 shadow-sm scale-[1.02]" : "border-slate-200 opacity-85 hover:opacity-100"
+        }`;
+        btn.style.backgroundColor = cat.color;
+        btn.style.color = cat.textColor;
+        btn.innerHTML = `<span>${cat.label}</span><span>${cat.emoji}</span>`;
+        btn.onclick = () => {
+          igState.category = cat;
+          renderIgCategoryButtons();
+          drawIgCanvas();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function updateIgState() {
+      igState.title = document.getElementById("igTitleInput").value;
+      igState.uppercase = document.getElementById("igUppercaseCheck").checked;
+      igState.fontSize = parseInt(document.getElementById("igFontSizeInput").value, 10);
+      document.getElementById("igFontSizeVal").textContent = igState.fontSize;
+      igState.subtitle = document.getElementById("igSubtitleInput").value;
+      igState.subtitleStyle = document.getElementById("igSubtitleStyleInput").value;
+      igState.imgScale = parseFloat(document.getElementById("igImgScale").value);
+      igState.imgOffsetX = parseFloat(document.getElementById("igImgOffsetX").value);
+      igState.imgOffsetY = parseFloat(document.getElementById("igImgOffsetY").value);
+      drawIgCanvas();
+    }
+
+    function handleIgImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById("igFileLabel").textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        igState.bgImageDataUrl = ev.target.result;
+        igState.imgScale = 1;
+        igState.imgOffsetX = 0;
+        igState.imgOffsetY = 0;
+        document.getElementById("igImgScale").value = 1;
+        document.getElementById("igImgOffsetX").value = 0;
+        document.getElementById("igImgOffsetY").value = 0;
+        loadIgBgImage(igState.bgImageDataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadIgBgImage(dataUrl) {
+      if (!dataUrl) {
+        igBgImageObj = null;
+        document.getElementById("igImageControls").classList.add("hidden");
+        document.getElementById("igRemoveImgBtn").classList.add("hidden");
+        drawIgCanvas();
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        igBgImageObj = img;
+        document.getElementById("igImageControls").classList.remove("hidden");
+        document.getElementById("igRemoveImgBtn").classList.remove("hidden");
+        drawIgCanvas();
+      };
+      img.src = dataUrl;
+    }
+
+    function removeIgImage() {
+      igState.bgImageDataUrl = null;
+      igBgImageObj = null;
+      document.getElementById("igBgImageInput").value = "";
+      document.getElementById("igFileLabel").textContent = "Carica foto dal dispositivo...";
+      document.getElementById("igImageControls").classList.add("hidden");
+      document.getElementById("igRemoveImgBtn").classList.add("hidden");
+      drawIgCanvas();
+    }
+
+    function setIgStatus(text) {
+      const el = document.getElementById("igStatusMsg");
+      el.textContent = text;
+      setTimeout(() => { el.textContent = ""; }, 3500);
+    }
+
+    function saveIgDraft() {
+      try {
+        const payload = {
+          categoryId: igState.category.id,
+          title: igState.title,
+          uppercase: igState.uppercase,
+          fontSize: igState.fontSize,
+          subtitle: igState.subtitle,
+          subtitleStyle: igState.subtitleStyle,
+          imgScale: igState.imgScale,
+          imgOffsetX: igState.imgOffsetX,
+          imgOffsetY: igState.imgOffsetY,
+          bgImageDataUrl: (igState.bgImageDataUrl && igState.bgImageDataUrl.length < 2500000) ? igState.bgImageDataUrl : null,
+          savedAt: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+        };
+        localStorage.setItem("ermes_ig_draft_v1", JSON.stringify(payload));
+        document.getElementById("igLoadDraftBtn").classList.remove("hidden");
+        setIgStatus("✓ Bozza salvata alle " + payload.savedAt);
+      } catch (e) {
+        const light = { ...igState, categoryId: igState.category.id, bgImageDataUrl: null };
+        localStorage.setItem("ermes_ig_draft_v1", JSON.stringify(light));
+        document.getElementById("igLoadDraftBtn").classList.remove("hidden");
+        setIgStatus("✓ Bozza testi salvata!");
+      }
+    }
+
+    function loadIgDraft() {
+      const raw = localStorage.getItem("ermes_ig_draft_v1");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      igState.category = IG_CATEGORIES.find(c => c.id === d.categoryId) || IG_CATEGORIES[0];
+      igState.title = d.title || "";
+      igState.uppercase = d.uppercase !== undefined ? d.uppercase : true;
+      igState.fontSize = d.fontSize || 62;
+      igState.subtitle = d.subtitle || "";
+      igState.subtitleStyle = d.subtitleStyle || "normal";
+      igState.imgScale = d.imgScale || 1;
+      igState.imgOffsetX = d.imgOffsetX || 0;
+      igState.imgOffsetY = d.imgOffsetY || 0;
+      igState.bgImageDataUrl = d.bgImageDataUrl || null;
+
+      document.getElementById("igTitleInput").value = igState.title;
+      document.getElementById("igUppercaseCheck").checked = igState.uppercase;
+      document.getElementById("igFontSizeInput").value = igState.fontSize;
+      document.getElementById("igFontSizeVal").textContent = igState.fontSize;
+      document.getElementById("igSubtitleInput").value = igState.subtitle;
+      document.getElementById("igSubtitleStyleInput").value = igState.subtitleStyle;
+      document.getElementById("igImgScale").value = igState.imgScale;
+      document.getElementById("igImgOffsetX").value = igState.imgOffsetX;
+      document.getElementById("igImgOffsetY").value = igState.imgOffsetY;
+
+      renderIgCategoryButtons();
+      loadIgBgImage(igState.bgImageDataUrl);
+      setIgStatus("📂 Bozza ripristinata!");
+    }
+
+    function wrapIgText(context, text, maxWidth) {
+      const paragraphs = text.split("\n");
+      let allLines = [];
+      paragraphs.forEach(p => {
+        const words = p.split(" ");
+        let currentLine = "";
+        for (let i = 0; i < words.length; i++) {
+          const testLine = currentLine ? currentLine + " " + words[i] : words[i];
+          if (context.measureText(testLine).width > maxWidth && currentLine !== "") {
+            allLines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        allLines.push(currentLine);
+      });
+      return allLines;
+    }
+
+    function drawIgCanvas() {
+      const canvas = document.getElementById("igPostCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const W = 1080, H = 1350;
+      ctx.clearRect(0, 0, W, H);
+
+      if (igBgImageObj) {
+        const imgRatio = igBgImageObj.width / igBgImageObj.height;
+        const canvasRatio = W / H;
+        let drawW, drawH;
+
+        if (imgRatio > canvasRatio) {
+          drawH = H * igState.imgScale;
+          drawW = drawH * imgRatio;
+        } else {
+          drawW = W * igState.imgScale;
+          drawH = drawW / imgRatio;
+        }
+
+        const x = (W - drawW) / 2 + igState.imgOffsetX;
+        const y = (H - drawH) / 2 + igState.imgOffsetY;
+        ctx.drawImage(igBgImageObj, x, y, drawW, drawH);
+
+        const topGrad = ctx.createLinearGradient(0, 0, 0, 260);
+        topGrad.addColorStop(0, "rgba(0,0,0,0.45)");
+        topGrad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = topGrad;
+        ctx.fillRect(0, 0, W, 260);
+      } else {
+        ctx.fillStyle = igState.category.bgSolid;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      const bottomGrad = ctx.createLinearGradient(0, H - 360, 0, H);
+      bottomGrad.addColorStop(0, "rgba(0,0,0,0)");
+      bottomGrad.addColorStop(0.55, "rgba(0,0,0,0.55)");
+      bottomGrad.addColorStop(1, "rgba(0,0,0,0.82)");
+      ctx.fillStyle = bottomGrad;
+      ctx.fillRect(0, H - 360, W, 360);
+
+      // Logo quadrato alto sinistra
+      const logoBoxX = 108, logoBoxY = 108, logoBoxSize = 130;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize);
+      if (igLogoLoaded) {
+        const pad = 16;
+        ctx.drawImage(igLogoImg, logoBoxX + pad, logoBoxY + pad, logoBoxSize - pad * 2, logoBoxSize - pad * 2);
+      }
+
+      // Badge ERMES UMG alto destra
+      const badgeW = 160, badgeH = 48;
+      const badgeX = W - 108 - badgeW, badgeY = 108;
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(badgeX, badgeY, badgeW, badgeH);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "italic 700 22px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("ERMES UMG", badgeX + badgeW / 2, badgeY + badgeH / 2 + 1);
+
+      // Box bianco fumetto
+      const boxX = 108, boxW = W - 216, innerPadX = 52;
+      const innerMaxW = boxW - innerPadX * 2;
+
+      const rawTitle = igState.uppercase ? igState.title.toUpperCase() : igState.title;
+      ctx.font = `700 ${igState.fontSize}px 'Oswald', sans-serif`;
+      const titleLines = rawTitle.trim() ? wrapIgText(ctx, rawTitle, innerMaxW) : [];
+      const titleLineHeight = Math.round(igState.fontSize * 1.16);
+      const titleBlockH = titleLines.length * titleLineHeight;
+
+      let subLines = [];
+      const subFontSize = 26, subLineHeight = 35;
+      if (igState.subtitle.trim()) {
+        if (igState.subtitleStyle === "bold") {
+          ctx.font = `700 ${subFontSize}px sans-serif`;
+          subLines = wrapIgText(ctx, igState.subtitle.toUpperCase(), innerMaxW);
+        } else if (igState.subtitleStyle === "italic") {
+          ctx.font = `italic 700 ${subFontSize}px sans-serif`;
+          subLines = wrapIgText(ctx, igState.subtitle, innerMaxW);
+        } else {
+          ctx.font = `500 ${subFontSize}px sans-serif`;
+          subLines = wrapIgText(ctx, igState.subtitle, innerMaxW);
+        }
+      }
+      const subBlockH = subLines.length > 0 ? (24 + subLines.length * subLineHeight) : 0;
+
+      const tagBarH = 74, topPadding = 46, gapTagTitle = 34, bottomPadding = 48;
+      const boxH = Math.max(360, topPadding + tagBarH + gapTagTitle + titleBlockH + subBlockH + bottomPadding);
+      const boxBottomY = 1110;
+      const boxY = boxBottomY - boxH;
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.moveTo(boxX, boxY);
+      ctx.lineTo(boxX + boxW, boxY);
+      ctx.lineTo(boxX + boxW, boxBottomY);
+      ctx.lineTo(boxX + boxW - 50, boxBottomY);
+      ctx.lineTo(boxX + boxW - 102, boxBottomY + 56);
+      ctx.lineTo(boxX + boxW - 154, boxBottomY);
+      ctx.lineTo(boxX, boxBottomY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Barra rubrica
+      const tagX = boxX + innerPadX, tagY = boxY + topPadding;
+      ctx.font = igState.category.italicLabel ? "italic 700 46px 'Oswald', sans-serif" : "700 46px 'Oswald', sans-serif";
+      const labelWidth = ctx.measureText(igState.category.label).width;
+      const tagW = Math.max(390, labelWidth + 145);
+
+      ctx.fillStyle = igState.category.color;
+      ctx.fillRect(tagX, tagY, tagW, tagBarH);
+
+      ctx.fillStyle = igState.category.textColor;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(igState.category.label, tagX + 20, tagY + tagBarH / 2 + 2);
+
+      ctx.font = "42px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(igState.category.emoji, tagX + tagW - 18, tagY + tagBarH / 2 + 3);
+
+      // Titolo
+      let cursorY = tagY + tagBarH + gapTagTitle;
+      ctx.fillStyle = "#0A0A0A";
+      ctx.font = `700 ${igState.fontSize}px 'Oswald', sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      titleLines.forEach(line => {
+        ctx.fillText(line, tagX, cursorY);
+        cursorY += titleLineHeight;
+      });
+
+      // Sottotitolo
+      if (subLines.length > 0) {
+        cursorY += 20;
+        ctx.font = igState.subtitleStyle === "bold"
+          ? `700 ${subFontSize}px sans-serif`
+          : igState.subtitleStyle === "italic"
+            ? `italic 700 ${subFontSize}px sans-serif`
+            : `500 ${subFontSize}px sans-serif`;
+        ctx.fillStyle = "#1E293B";
+        subLines.forEach(line => {
+          ctx.fillText(line, tagX, cursorY);
+          cursorY += subLineHeight;
+        });
+      }
+
+      // Footer
+      const footerY = 1228;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "400 25px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const ctaText = "leggi l'articolo completo";
+      ctx.fillText(ctaText, 108, footerY);
+
+      const ctaW = ctx.measureText(ctaText).width;
+      const circleX = 108 + ctaW + 24, circleY = footerY;
+      ctx.beginPath();
+      ctx.arc(circleX, circleY, 13, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+
+      ctx.strokeStyle = "#111111";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(circleX - 5, circleY);
+      ctx.lineTo(circleX + 5, circleY);
+      ctx.moveTo(circleX + 1, circleY - 4);
+      ctx.lineTo(circleX + 5, circleY);
+      ctx.lineTo(circleX + 1, circleY + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "400 25px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("www.ermes-umg.it", W - 108, footerY);
+    }
+
+    function downloadIgGraphic() {
+      const canvas = document.getElementById("igPostCanvas");
+      const slug = igState.category.id;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const link = document.createElement("a");
+      link.download = `ermes-umg-${slug}-${dateStr}.png`;
+      link.href = canvas.toDataURL("image/png", 1.0);
+      link.click();
+      setIgStatus("⬇️ Grafica scaricata!");
     }
 
     // CARICAMENTO STATISTICHE ARTICOLI E LETTORI
