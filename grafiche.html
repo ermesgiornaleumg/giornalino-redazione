@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Generatore Grafiche Instagram - ERMES UMG</title>
+  <link rel="icon" href="https://www.ermes-umg.it/favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:ital,wght@0,600;0,700;1,700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .canvas-container {
+      width: 100%;
+      max-width: 432px; /* Scala 0.4x di 1080px */
+      aspect-ratio: 4 / 5;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- SCHERMATA DI LOGIN -->
+  <div id="loginScreen" class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-8">
+      <div class="flex flex-col items-center mb-6">
+        <img src="https://www.ermes-umg.it/favicon.ico" alt="Logo Ermes UMG" class="w-16 h-16 object-contain mb-3 rounded-lg shadow-sm border border-slate-100 p-1">
+        <h1 class="text-2xl font-bold text-slate-900">Grafiche Social ERMES</h1>
+        <p class="text-sm text-slate-500 text-center mt-1">Accedi con le credenziali della redazione</p>
+      </div>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome Utente</label>
+          <input type="text" id="loginUser" required autocomplete="username" placeholder="es. bruno"
+            class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
+          <input type="password" id="loginPass" required autocomplete="current-password" placeholder="••••••••"
+            class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition">
+        </div>
+        <p id="loginError" class="text-sm text-red-600 font-medium hidden"></p>
+        <button type="submit" id="loginBtn"
+          class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg transition shadow-sm cursor-pointer">
+          Accedi al Generatore
+        </button>
+      </form>
+      <p class="text-xs text-center text-slate-400 mt-6">Area riservata Redazione Ermes UMG</p>
+    </div>
+  </div>
+
+  <!-- APPLICAZIONE GENERATORE -->
+  <div id="appScreen" class="hidden flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+      <div class="flex items-center gap-3">
+        <img src="https://www.ermes-umg.it/favicon.ico" alt="Ermes" class="w-9 h-9 rounded border border-slate-200 p-0.5">
+        <div>
+          <h2 class="font-bold text-slate-900 leading-tight">Generatore Grafiche IG</h2>
+          <span class="text-xs text-slate-500" id="loggedUserLabel">Redazione</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="saveDraftBtn" type="button"
+          class="px-3 py-1.5 text-sm font-medium bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 rounded-lg transition cursor-pointer">
+          💾 Salva Bozza
+        </button>
+        <button id="loadDraftBtn" type="button"
+          class="px-3 py-1.5 text-sm font-medium bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 rounded-lg transition cursor-pointer hidden">
+          📂 Ripristina Bozza
+        </button>
+        <button id="logoutBtn" type="button"
+          class="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer">
+          Esci
+        </button>
+      </div>
+    </header>
+
+    <!-- Notifica toast -->
+    <div id="toastMsg" class="fixed bottom-5 right-5 bg-slate-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
+
+    <!-- Contenuto Principale -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- PANNELLO CONTROLLI (Sinistra) -->
+      <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+
+        <!-- 1. Scelta Rubrica -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Rubrica / Categoria</label>
+          <div class="grid grid-cols-3 gap-2" id="categoryButtons">
+            <!-- Generati via JS -->
+          </div>
+        </div>
+
+        <!-- 2. Testi -->
+        <div class="space-y-4 pt-2 border-t border-slate-100">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">2. Testi della Grafica</label>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-sm font-medium text-slate-700">Titolo Principale</span>
+              <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer">
+                <input type="checkbox" id="uppercaseCheck" checked class="rounded text-slate-900">
+                Tutto Maiuscolo
+              </label>
+            </div>
+            <textarea id="titleInput" rows="3" placeholder="Scrivi qui il titolo dell'articolo..."
+              class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none text-base font-medium">L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE</textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Dimensione Titolo (<span id="fontSizeVal">64</span>px)</label>
+              <input type="range" id="fontSizeInput" min="40" max="86" value="62" class="w-full accent-slate-900">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Stile Sottotitolo</label>
+              <select id="subtitleStyleInput" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white outline-none">
+                <option value="normal">Normale (Estratto / Autore)</option>
+                <option value="bold">Grassetto Maiuscolo (Nome Autore)</option>
+                <option value="italic">Corsivo Grassetto (Citazione)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Sottotitolo / Autore / Breve Estratto (Opzionale)</label>
+            <textarea id="subtitleInput" rows="2" placeholder="Es. di Ludovica Mannarino oppure breve estratto..."
+              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none text-sm"></textarea>
+          </div>
+        </div>
+
+        <!-- 3. Immagine di Sfondo -->
+        <div class="space-y-4 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">3. Immagine di Sfondo</label>
+            <button type="button" id="removeImgBtn" class="text-xs text-red-600 hover:underline hidden cursor-pointer">
+              Rimuovi foto (usa colore rubrica)
+            </button>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 hover:border-slate-500 rounded-xl cursor-pointer bg-slate-50 transition">
+              <span class="text-lg">🖼️</span>
+              <span class="text-sm font-medium text-slate-700" id="fileLabel">Carica foto dal dispositivo...</span>
+              <input type="file" id="bgImageInput" accept="image/*" class="hidden">
+            </label>
+          </div>
+
+          <!-- Controlli Zoom e Posizione foto -->
+          <div id="imageControls" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Zoom Foto</label>
+              <input type="range" id="imgScale" min="1" max="2.5" step="0.05" value="1" class="w-full accent-slate-900">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Sposta Orizzontale</label>
+              <input type="range" id="imgOffsetX" min="-400" max="400" step="5" value="0" class="w-full accent-slate-900">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Sposta Verticale</label>
+              <input type="range" id="imgOffsetY" min="-400" max="400" step="5" value="0" class="w-full accent-slate-900">
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottone Download -->
+        <div class="pt-4 border-t border-slate-100">
+          <button type="button" id="downloadBtn"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base cursor-pointer">
+            <span>⬇️ Scarica Grafica Instagram (PNG 1080×1350)</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ANTEPRIMA IN TEMPO REALE (Destra) -->
+      <div class="lg:col-span-5 flex flex-col items-center sticky top-20">
+        <div class="w-full max-w-[432px] flex items-center justify-between mb-2 px-1">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Anteprima Live (4:5)</span>
+          <span class="text-xs text-slate-400">1080 × 1350 px</span>
+        </div>
+
+        <div class="canvas-container rounded-lg overflow-hidden bg-slate-800">
+          <canvas id="postCanvas" width="1080" height="1350"></canvas>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // ==========================================
+    // CONFIGURAZIONE E DATI RUBRICHE ERMES UMG
+    // ==========================================
+    const WORKER_USERS_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/users";
+    const LOGO_URL = "https://www.ermes-umg.it/favicon.ico";
+
+    const CATEGORIES = [
+      { id: "martedi",   label: "mARTEdì",    color: "#EF2B2D", bgSolid: "#C82325", textColor: "#FFFFFF", emoji: "🎨", italicLabel: false },
+      { id: "musica",    label: "MUSICA",     color: "#FF6B9E", bgSolid: "#D94B7C", textColor: "#FFFFFF", emoji: "🎵", italicLabel: false },
+      { id: "cultura",   label: "CULTURA",    color: "#39C16C", bgSolid: "#2A9D54", textColor: "#FFFFFF", emoji: "✳️", italicLabel: false },
+      { id: "attualita", label: "ATTUALITA'", color: "#D95338", bgSolid: "#D95338", textColor: "#FFFFFF", emoji: "📰", italicLabel: true  },
+      { id: "pensieri",  label: "PENSIERI",   color: "#F7D560", bgSolid: "#E5BE3B", textColor: "#FFFFFF", emoji: "💭", italicLabel: false },
+      { id: "umgnotizie",label: "UMGnotizie", color: "#D4C419", bgSolid: "#B8A912", textColor: "#FFFFFF", emoji: "🎓", italicLabel: false },
+      { id: "sport",     label: "SPORT",      color: "#7B5E52", bgSolid: "#7B5E52", textColor: "#FFFFFF", emoji: "⚽", italicLabel: true  },
+      { id: "curiosita", label: "CURIOSITA'", color: "#98C95E", bgSolid: "#98C95E", textColor: "#FFFFFF", emoji: "🤔", italicLabel: true  },
+      { id: "libri",     label: "LIBRI",      color: "#7AD3C6", bgSolid: "#7AD3C6", textColor: "#FFFFFF", emoji: "📚", italicLabel: true  }
+    ];
+
+    // Stato corrente
+    let state = {
+      category: CATEGORIES[2], // CULTURA di default
+      title: "L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE",
+      uppercase: true,
+      fontSize: 62,
+      subtitle: "",
+      subtitleStyle: "normal",
+      bgImageDataUrl: null,
+      imgScale: 1,
+      imgOffsetX: 0,
+      imgOffsetY: 0
+    };
+
+    let logoImg = new Image();
+    logoImg.crossOrigin = "anonymous";
+    let logoLoaded = false;
+
+    let bgImageObj = null;
+
+    // Carica logo evitando blocchi CORS al download
+    function loadLogo() {
+      fetch(LOGO_URL)
+        .then(res => res.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            logoImg.onload = () => { logoLoaded = true; drawCanvas(); };
+            logoImg.src = reader.result;
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => {
+          // Fallback diretto se fetch non va
+          logoImg.onload = () => { logoLoaded = true; drawCanvas(); };
+          logoImg.src = LOGO_URL;
+        });
+    }
+
+    // ==========================================
+    // AUTENTICAZIONE REDAZIONE
+    // ==========================================
+    const loginScreen = document.getElementById("loginScreen");
+    const appScreen = document.getElementById("appScreen");
+    const loginForm = document.getElementById("loginForm");
+    const loginError = document.getElementById("loginError");
+    const loginBtn = document.getElementById("loginBtn");
+
+    function checkAuth() {
+      const savedUser = sessionStorage.getItem("ermes_grafiche_user");
+      if (savedUser) {
+        showApp(savedUser);
+      }
+    }
+
+    function showApp(username) {
+      loginScreen.classList.add("hidden");
+      appScreen.classList.remove("hidden");
+      document.getElementById("loggedUserLabel").textContent = "Redattore: " + username;
+      checkSavedDraft();
+      document.fonts.ready.then(() => drawCanvas());
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userVal = document.getElementById("loginUser").value.trim().toLowerCase();
+      const passVal = document.getElementById("loginPass").value.trim();
+
+      loginError.classList.add("hidden");
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Verifica credenziali...";
+
+      try {
+        const res = await fetch(WORKER_USERS_URL);
+        if (!res.ok) throw new Error("Errore server");
+        const users = await res.json();
+
+        // Verifica corrispondenza utente/password (supporta sia array che oggetto mappa)
+        let validUser = null;
+        if (Array.isArray(users)) {
+          validUser = users.find(u =>
+            (u.username && u.username.toLowerCase() === userVal && u.password === passVal) ||
+            (u.user && u.user.toLowerCase() === userVal && u.pass === passVal)
+          );
+        } else if (typeof users === "object" && users !== null) {
+          for (const key of Object.keys(users)) {
+            const u = users[key];
+            if (key.toLowerCase() === userVal && (u === passVal || u.password === passVal)) {
+              validUser = { name: u.name || key };
+              break;
+            }
+          }
+        }
+
+        if (validUser) {
+          const displayName = validUser.name || validUser.username || userVal;
+          sessionStorage.setItem("ermes_grafiche_user", displayName);
+          showApp(displayName);
+        } else {
+          loginError.textContent = "Nome utente o password non validi.";
+          loginError.classList.remove("hidden");
+        }
+      } catch (err) {
+        loginError.textContent = "Impossibile connettersi al server della redazione.";
+        loginError.classList.remove("hidden");
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Accedi al Generatore";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      sessionStorage.removeItem("ermes_grafiche_user");
+      location.reload();
+    });
+
+    // ==========================================
+    // INIZIALIZZAZIONE INTERFACCIA E CONTROLLI
+    // ==========================================
+    const catContainer = document.getElementById("categoryButtons");
+    function renderCategoryButtons() {
+      catContainer.innerHTML = "";
+      CATEGORIES.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isSelected = state.category.id === cat.id;
+        btn.className = `px-3 py-2 rounded-lg text-xs font-bold tracking-wide transition flex items-center justify-between border cursor-pointer ${
+          isSelected ? "ring-2 ring-slate-900 border-slate-900 shadow-sm scale-[1.02]" : "border-slate-200 opacity-85 hover:opacity-100"
+        }`;
+        btn.style.backgroundColor = cat.color;
+        btn.style.color = cat.textColor;
+        btn.innerHTML = `<span>${cat.label}</span><span>${cat.emoji}</span>`;
+        btn.onclick = () => {
+          state.category = cat;
+          renderCategoryButtons();
+          drawCanvas();
+        };
+        catContainer.appendChild(btn);
+      });
+    }
+
+    // Eventi input testo
+    document.getElementById("titleInput").addEventListener("input", (e) => {
+      state.title = e.target.value;
+      drawCanvas();
+    });
+
+    document.getElementById("uppercaseCheck").addEventListener("change", (e) => {
+      state.uppercase = e.target.checked;
+      drawCanvas();
+    });
+
+    document.getElementById("fontSizeInput").addEventListener("input", (e) => {
+      state.fontSize = parseInt(e.target.value, 10);
+      document.getElementById("fontSizeVal").textContent = state.fontSize;
+      drawCanvas();
+    });
+
+    document.getElementById("subtitleInput").addEventListener("input", (e) => {
+      state.subtitle = e.target.value;
+      drawCanvas();
+    });
+
+    document.getElementById("subtitleStyleInput").addEventListener("change", (e) => {
+      state.subtitleStyle = e.target.value;
+      drawCanvas();
+    });
+
+    // Caricamento immagine di sfondo
+    document.getElementById("bgImageInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById("fileLabel").textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        state.bgImageDataUrl = ev.target.result;
+        state.imgScale = 1;
+        state.imgOffsetX = 0;
+        state.imgOffsetY = 0;
+        document.getElementById("imgScale").value = 1;
+        document.getElementById("imgOffsetX").value = 0;
+        document.getElementById("imgOffsetY").value = 0;
+
+        loadBgImageFromDataUrl(state.bgImageDataUrl);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function loadBgImageFromDataUrl(dataUrl) {
+      if (!dataUrl) {
+        bgImageObj = null;
+        document.getElementById("imageControls").classList.add("hidden");
+        document.getElementById("removeImgBtn").classList.add("hidden");
+        drawCanvas();
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        bgImageObj = img;
+        document.getElementById("imageControls").classList.remove("hidden");
+        document.getElementById("removeImgBtn").classList.remove("hidden");
+        drawCanvas();
+      };
+      img.src = dataUrl;
+    }
+
+    document.getElementById("removeImgBtn").addEventListener("click", () => {
+      state.bgImageDataUrl = null;
+      bgImageObj = null;
+      document.getElementById("bgImageInput").value = "";
+      document.getElementById("fileLabel").textContent = "Carica foto dal dispositivo...";
+      document.getElementById("imageControls").classList.add("hidden");
+      document.getElementById("removeImgBtn").classList.add("hidden");
+      drawCanvas();
+    });
+
+    ["imgScale", "imgOffsetX", "imgOffsetY"].forEach(id => {
+      document.getElementById(id).addEventListener("input", (e) => {
+        state[id] = parseFloat(e.target.value);
+        drawCanvas();
+      });
+    });
+
+    // ==========================================
+    // SALVATAGGIO E RIPRISTINO BOZZA LOCALE
+    // ==========================================
+    const DRAFT_KEY = "ermes_ig_draft_v1";
+
+    function showToast(msg) {
+      const toast = document.getElementById("toastMsg");
+      toast.textContent = msg;
+      toast.classList.remove("opacity-0");
+      setTimeout(() => toast.classList.add("opacity-0"), 3000);
+    }
+
+    function checkSavedDraft() {
+      if (localStorage.getItem(DRAFT_KEY)) {
+        document.getElementById("loadDraftBtn").classList.remove("hidden");
+      }
+    }
+
+    document.getElementById("saveDraftBtn").addEventListener("click", () => {
+      try {
+        const draftPayload = {
+          categoryId: state.category.id,
+          title: state.title,
+          uppercase: state.uppercase,
+          fontSize: state.fontSize,
+          subtitle: state.subtitle,
+          subtitleStyle: state.subtitleStyle,
+          imgScale: state.imgScale,
+          imgOffsetX: state.imgOffsetX,
+          imgOffsetY: state.imgOffsetY,
+          // Salviamo l'immagine solo se non supera i 2.5MB per non saturare localStorage
+          bgImageDataUrl: (state.bgImageDataUrl && state.bgImageDataUrl.length < 2500000) ? state.bgImageDataUrl : null,
+          savedAt: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+        document.getElementById("loadDraftBtn").classList.remove("hidden");
+        showToast("✓ Bozza salvata alle " + draftPayload.savedAt);
+      } catch (e) {
+        // Fallback senza immagine se troppo pesante
+        const lightDraft = { ...state, categoryId: state.category.id, bgImageDataUrl: null };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(lightDraft));
+        document.getElementById("loadDraftBtn").classList.remove("hidden");
+        showToast("✓ Bozza testi salvata!");
+      }
+    });
+
+    document.getElementById("loadDraftBtn").addEventListener("click", () => {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      const foundCat = CATEGORIES.find(c => c.id === d.categoryId) || CATEGORIES[0];
+      state.category = foundCat;
+      state.title = d.title || "";
+      state.uppercase = d.uppercase !== undefined ? d.uppercase : true;
+      state.fontSize = d.fontSize || 62;
+      state.subtitle = d.subtitle || "";
+      state.subtitleStyle = d.subtitleStyle || "normal";
+      state.imgScale = d.imgScale || 1;
+      state.imgOffsetX = d.imgOffsetX || 0;
+      state.imgOffsetY = d.imgOffsetY || 0;
+      state.bgImageDataUrl = d.bgImageDataUrl || null;
+
+      // Aggiorna UI
+      document.getElementById("titleInput").value = state.title;
+      document.getElementById("uppercaseCheck").checked = state.uppercase;
+      document.getElementById("fontSizeInput").value = state.fontSize;
+      document.getElementById("fontSizeVal").textContent = state.fontSize;
+      document.getElementById("subtitleInput").value = state.subtitle;
+      document.getElementById("subtitleStyleInput").value = state.subtitleStyle;
+      document.getElementById("imgScale").value = state.imgScale;
+      document.getElementById("imgOffsetX").value = state.imgOffsetX;
+      document.getElementById("imgOffsetY").value = state.imgOffsetY;
+
+      renderCategoryButtons();
+      loadBgImageFromDataUrl(state.bgImageDataUrl);
+      showToast("📂 Bozza ripristinata!");
+    });
+
+    // ==========================================
+    // MOTORE DI DISEGNO CANVAS (1080 x 1350 px)
+    // ==========================================
+    const canvas = document.getElementById("postCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function wrapText(context, text, maxWidth) {
+      const paragraphs = text.split("\n");
+      let allLines = [];
+
+      paragraphs.forEach(p => {
+        const words = p.split(" ");
+        let currentLine = "";
+        for (let i = 0; i < words.length; i++) {
+          const testLine = currentLine ? currentLine + " " + words[i] : words[i];
+          const metrics = context.measureText(testLine);
+          if (metrics.width > maxWidth && currentLine !== "") {
+            allLines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        allLines.push(currentLine);
+      });
+      return allLines;
+    }
+
+    function drawCanvas() {
+      const W = 1080;
+      const H = 1350;
+      ctx.clearRect(0, 0, W, H);
+
+      // 1. SFONDO (Foto o Colore Rubrica)
+      if (bgImageObj) {
+        const imgRatio = bgImageObj.width / bgImageObj.height;
+        const canvasRatio = W / H;
+        let drawW, drawH;
+
+        if (imgRatio > canvasRatio) {
+          drawH = H * state.imgScale;
+          drawW = drawH * imgRatio;
+        } else {
+          drawW = W * state.imgScale;
+          drawH = drawW / imgRatio;
+        }
+
+        const x = (W - drawW) / 2 + state.imgOffsetX;
+        const y = (H - drawH) / 2 + state.imgOffsetY;
+        ctx.drawImage(bgImageObj, x, y, drawW, drawH);
+
+        // Leggera vignettatura scura in alto e in basso per leggibilità
+        const topGrad = ctx.createLinearGradient(0, 0, 0, 260);
+        topGrad.addColorStop(0, "rgba(0,0,0,0.45)");
+        topGrad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = topGrad;
+        ctx.fillRect(0, 0, W, 260);
+      } else {
+        ctx.fillStyle = state.category.bgSolid;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Sfumatura scura in basso (presente in tutti i template per il footer)
+      const bottomGrad = ctx.createLinearGradient(0, H - 360, 0, H);
+      bottomGrad.addColorStop(0, "rgba(0,0,0,0)");
+      bottomGrad.addColorStop(0.55, "rgba(0,0,0,0.55)");
+      bottomGrad.addColorStop(1, "rgba(0,0,0,0.82)");
+      ctx.fillStyle = bottomGrad;
+      ctx.fillRect(0, H - 360, W, 360);
+
+      // 2. LOGO QUADRATO IN ALTO A SINISTRA
+      const logoBoxX = 108;
+      const logoBoxY = 108;
+      const logoBoxSize = 130;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize);
+
+      if (logoLoaded) {
+        const pad = 16;
+        ctx.drawImage(logoImg, logoBoxX + pad, logoBoxY + pad, logoBoxSize - pad * 2, logoBoxSize - pad * 2);
+      }
+
+      // 3. ETICHETTA "ERMES UMG" IN ALTO A DESTRA
+      const badgeW = 160;
+      const badgeH = 48;
+      const badgeX = W - 108 - badgeW;
+      const badgeY = 108;
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(badgeX, badgeY, badgeW, badgeH);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "italic 700 22px 'Inter', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("ERMES UMG", badgeX + badgeW / 2, badgeY + badgeH / 2 + 1);
+
+      // 4. MISURAZIONE CONTENUTO DEL BOX BIANCO (FUMETTO)
+      const boxX = 108;
+      const boxW = W - 216; // 864px
+      const innerPadX = 52;
+      const innerMaxW = boxW - innerPadX * 2; // 760px
+
+      // Prepara Titolo
+      const rawTitle = state.uppercase ? state.title.toUpperCase() : state.title;
+      ctx.font = `700 ${state.fontSize}px 'Oswald', sans-serif`;
+      const titleLines = rawTitle.trim() ? wrapText(ctx, rawTitle, innerMaxW) : [];
+      const titleLineHeight = Math.round(state.fontSize * 1.16);
+      const titleBlockH = titleLines.length * titleLineHeight;
+
+      // Prepara Sottotitolo (se presente)
+      let subLines = [];
+      const subFontSize = 26;
+      const subLineHeight = 35;
+      if (state.subtitle.trim()) {
+        if (state.subtitleStyle === "bold") {
+          ctx.font = `700 ${subFontSize}px 'Inter', sans-serif`;
+          subLines = wrapText(ctx, state.subtitle.toUpperCase(), innerMaxW);
+        } else if (state.subtitleStyle === "italic") {
+          ctx.font = `italic 700 ${subFontSize}px 'Inter', sans-serif`;
+          subLines = wrapText(ctx, state.subtitle, innerMaxW);
+        } else {
+          ctx.font = `500 ${subFontSize}px 'Inter', sans-serif`;
+          subLines = wrapText(ctx, state.subtitle, innerMaxW);
+        }
+      }
+      const subBlockH = subLines.length > 0 ? (24 + subLines.length * subLineHeight) : 0;
+
+      // Calcolo altezza dinamica del fumetto bianco
+      const tagBarH = 74;
+      const topPadding = 46;
+      const gapTagTitle = 34;
+      const bottomPadding = 48;
+      const boxH = Math.max(360, topPadding + tagBarH + gapTagTitle + titleBlockH + subBlockH + bottomPadding);
+
+      // Posiziona il box bianco ancorato sopra il footer (y fondo = 1110px)
+      const boxBottomY = 1110;
+      const boxY = boxBottomY - boxH;
+
+      // Disegna Box Bianco + Punta Triangolare Fumetto
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.moveTo(boxX, boxY);
+      ctx.lineTo(boxX + boxW, boxY);
+      ctx.lineTo(boxX + boxW, boxBottomY);
+      // Punta triangolare in basso a destra (come nei layout Canva)
+      ctx.lineTo(boxX + boxW - 50, boxBottomY);
+      ctx.lineTo(boxX + boxW - 102, boxBottomY + 56);
+      ctx.lineTo(boxX + boxW - 154, boxBottomY);
+      ctx.lineTo(boxX, boxBottomY);
+      ctx.closePath();
+      ctx.fill();
+
+      // 5. FASCIA COLORATA RUBRICA DENTRO IL BOX
+      const tagX = boxX + innerPadX;
+      const tagY = boxY + topPadding;
+      const catFontStyle = state.category.italicLabel ? "italic 700 46px 'Oswald', sans-serif" : "700 46px 'Oswald', sans-serif";
+      ctx.font = catFontStyle;
+      const labelWidth = ctx.measureText(state.category.label).width;
+      const tagW = Math.max(390, labelWidth + 145);
+
+      ctx.fillStyle = state.category.color;
+      ctx.fillRect(tagX, tagY, tagW, tagBarH);
+
+      // Testo rubrica
+      ctx.fillStyle = state.category.textColor;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(state.category.label, tagX + 20, tagY + tagBarH / 2 + 2);
+
+      // Emoji / Icona rubrica a destra nella barra
+      ctx.font = "42px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(state.category.emoji, tagX + tagW - 18, tagY + tagBarH / 2 + 3);
+
+      // 6. DISEGNO TITOLO PRINCIPALE
+      let cursorY = tagY + tagBarH + gapTagTitle;
+      ctx.fillStyle = "#0A0A0A";
+      ctx.font = `700 ${state.fontSize}px 'Oswald', sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
+      titleLines.forEach(line => {
+        ctx.fillText(line, tagX, cursorY);
+        cursorY += titleLineHeight;
+      });
+
+      // 7. DISEGNO SOTTOTITOLO / AUTORE
+      if (subLines.length > 0) {
+        cursorY += 20;
+        if (state.subtitleStyle === "bold") {
+          ctx.font = `700 ${subFontSize}px 'Inter', sans-serif`;
+        } else if (state.subtitleStyle === "italic") {
+          ctx.font = `italic 700 ${subFontSize}px 'Inter', sans-serif`;
+        } else {
+          ctx.font = `500 ${subFontSize}px 'Inter', sans-serif`;
+        }
+        ctx.fillStyle = "#1E293B";
+        subLines.forEach(line => {
+          ctx.fillText(line, tagX, cursorY);
+          cursorY += subLineHeight;
+        });
+      }
+
+      // 8. FOOTER IN BASSO ("leggi l'articolo completo ->" e "www.ermes-umg.it")
+      const footerY = 1228;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "400 25px 'Inter', sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const ctaText = "leggi l'articolo completo";
+      ctx.fillText(ctaText, 108, footerY);
+
+      // Cerchio bianco con freccia nera a destra del testo
+      const ctaW = ctx.measureText(ctaText).width;
+      const circleX = 108 + ctaW + 24;
+      const circleY = footerY;
+      ctx.beginPath();
+      ctx.arc(circleX, circleY, 13, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+
+      ctx.strokeStyle = "#111111";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(circleX - 5, circleY);
+      ctx.lineTo(circleX + 5, circleY);
+      ctx.moveTo(circleX + 1, circleY - 4);
+      ctx.lineTo(circleX + 5, circleY);
+      ctx.lineTo(circleX + 1, circleY + 4);
+      ctx.stroke();
+
+      // URL sito a destra
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "400 25px 'Inter', sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("www.ermes-umg.it", W - 108, footerY);
+    }
+
+    // ==========================================
+    // DOWNLOAD PNG ALTA RISOLUZIONE
+    // ==========================================
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const slug = state.category.id;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const link = document.createElement("a");
+      link.download = `ermes-umg-${slug}-${dateStr}.png`;
+      link.href = canvas.toDataURL("image/png", 1.0);
+      link.click();
+      showToast("⬇️ Immagine scaricata!");
+    });
+
+    // Avvio
+    loadLogo();
+    renderCategoryButtons();
+    checkAuth();
+  </script>
+</body>
+</html>
