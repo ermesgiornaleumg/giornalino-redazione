@@ -39,7 +39,7 @@
       <form id="loginForm" class="space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
-          <input type="text" id="username" required placeholder="es. bruno.rachiele"
+          <input type="text" id="username" required placeholder="es. admin"
             class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
         <div>
@@ -203,7 +203,7 @@
     // ==========================================
     // CONFIGURAZIONE WORKER E RUBRICHE ERMES UMG
     // ==========================================
-    const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
+    const WORKER_BASE = "https://white-sky-0801.ermesgiornale-umg.workers.dev";
     const LOGO_URL = "https://www.ermes-umg.it/favicon.ico";
 
     const CATEGORIES = [
@@ -254,7 +254,7 @@
     }
 
     // ==========================================
-    // AUTENTICAZIONE REDAZIONE (ALLINEATA AL WORKER)
+    // AUTENTICAZIONE REDAZIONE (/login e /users)
     // ==========================================
     const loginScreen = document.getElementById("loginScreen");
     const appScreen = document.getElementById("appScreen");
@@ -287,25 +287,47 @@
       loginBtn.textContent = "Accesso in corso...";
 
       try {
-        // Invia la richiesta POST al Worker esattamente come fa index.html
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "login", username, password })
-        });
+        let authenticatedUser = null;
 
-        const data = await res.json();
+        // 1. Prova POST su /login
+        try {
+          const resLogin = await fetch(`${WORKER_BASE}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+          });
+          if (resLogin.ok) {
+            const dataLogin = await resLogin.json();
+            if (dataLogin.success || dataLogin.user || dataLogin.authenticated || dataLogin.role) {
+              authenticatedUser = (dataLogin.user && (dataLogin.user.name || dataLogin.user.username)) || dataLogin.name || username;
+            }
+          }
+        } catch (_) {}
 
-        if (res.ok && (data.success || data.user || data.authenticated || data.role)) {
-          const displayName = (data.user && (data.user.name || data.user.username)) || data.name || username;
-          sessionStorage.setItem("ermes_grafiche_user", displayName);
-          showApp(displayName);
+        // 2. Se /login non ha risposto positivamente, verifica direttamente su GET /users
+        if (!authenticatedUser) {
+          const resUsers = await fetch(`${WORKER_BASE}/users`);
+          if (resUsers.ok) {
+            const usersData = await resUsers.json();
+            const list = Array.isArray(usersData) ? usersData : Object.entries(usersData).map(([k, v]) => ({ username: k, ...(typeof v === "object" ? v : { password: v }) }));
+            const found = list.find(u =>
+              u.username && u.username.toLowerCase() === username && u.password === password
+            );
+            if (found) {
+              authenticatedUser = found.name || found.username;
+            }
+          }
+        }
+
+        if (authenticatedUser) {
+          sessionStorage.setItem("ermes_grafiche_user", authenticatedUser);
+          showApp(authenticatedUser);
         } else {
-          loginError.textContent = data.error || data.message || "Credenziali non valide.";
+          loginError.textContent = "Username o password non validi.";
           loginError.classList.remove("hidden");
         }
       } catch (err) {
-        loginError.textContent = "Errore di connessione al server della redazione.";
+        loginError.textContent = "Errore di connessione con il server della redazione.";
         loginError.classList.remove("hidden");
       } finally {
         loginBtn.disabled = false;
