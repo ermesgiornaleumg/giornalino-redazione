@@ -14,7 +14,7 @@
     body { font-family: 'Inter', sans-serif; }
     .canvas-container {
       width: 100%;
-      max-width: 432px; /* Scala 0.4x di 1080px */
+      max-width: 432px;
       aspect-ratio: 4 / 5;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
     }
@@ -29,31 +29,34 @@
 
   <!-- SCHERMATA DI LOGIN -->
   <div id="loginScreen" class="flex-1 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-8">
-      <div class="flex flex-col items-center mb-6">
-        <img src="https://www.ermes-umg.it/favicon.ico" alt="Logo Ermes UMG" class="w-16 h-16 object-contain mb-3 rounded-lg shadow-sm border border-slate-100 p-1">
-        <h1 class="text-2xl font-bold text-slate-900">Grafiche Social ERMES</h1>
-        <p class="text-sm text-slate-500 text-center mt-1">Accedi con le credenziali della redazione</p>
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-8 text-center">
+      <div class="flex justify-center mb-4">
+        <img src="https://www.ermes-umg.it/favicon.ico" alt="Ermes UMG Logo" class="h-16 w-16 object-contain rounded-xl shadow-sm border border-slate-100 p-1">
       </div>
+      <h1 class="text-2xl font-bold text-slate-900">Grafiche Social ERMES</h1>
+      <p class="text-slate-500 text-sm mt-1 mb-6">Accedi con le credenziali della redazione</p>
 
-      <form id="loginForm" class="space-y-4">
+      <form id="loginForm" class="space-y-4 text-left">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome Utente</label>
-          <input type="text" id="loginUser" required autocomplete="username" placeholder="es. bruno"
-            class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition">
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Username</label>
+          <input type="text" id="username" required placeholder="es. bruno.rachiele"
+            class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
-          <input type="password" id="loginPass" required autocomplete="current-password" placeholder="••••••••"
-            class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition">
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Password</label>
+          <input type="password" id="password" required
+            class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
-        <p id="loginError" class="text-sm text-red-600 font-medium hidden"></p>
+        <p id="loginError" class="text-red-500 text-xs hidden text-center font-medium">Credenziali non valide.</p>
         <button type="submit" id="loginBtn"
-          class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg transition shadow-sm cursor-pointer">
-          Accedi al Generatore
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition shadow-sm cursor-pointer">
+          Accedi
         </button>
       </form>
-      <p class="text-xs text-center text-slate-400 mt-6">Area riservata Redazione Ermes UMG</p>
+
+      <div class="mt-8 pt-4 border-t border-slate-100 text-xs text-slate-400">
+        <p>Area riservata Redazione <span class="font-semibold text-slate-600">Ermes UMG</span></p>
+      </div>
     </div>
   </div>
 
@@ -96,9 +99,7 @@
         <!-- 1. Scelta Rubrica -->
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Rubrica / Categoria</label>
-          <div class="grid grid-cols-3 gap-2" id="categoryButtons">
-            <!-- Generati via JS -->
-          </div>
+          <div class="grid grid-cols-3 gap-2" id="categoryButtons"></div>
         </div>
 
         <!-- 2. Testi -->
@@ -119,7 +120,7 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Dimensione Titolo (<span id="fontSizeVal">64</span>px)</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Dimensione Titolo (<span id="fontSizeVal">62</span>px)</label>
               <input type="range" id="fontSizeInput" min="40" max="86" value="62" class="w-full accent-slate-900">
             </div>
             <div>
@@ -200,9 +201,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURAZIONE E DATI RUBRICHE ERMES UMG
+    // CONFIGURAZIONE WORKER E RUBRICHE ERMES UMG
     // ==========================================
-    const WORKER_USERS_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/users";
+    const WORKER_URL = "https://white-sky-0801.ermesgiornale-umg.workers.dev/";
     const LOGO_URL = "https://www.ermes-umg.it/favicon.ico";
 
     const CATEGORIES = [
@@ -217,9 +218,8 @@
       { id: "libri",     label: "LIBRI",      color: "#7AD3C6", bgSolid: "#7AD3C6", textColor: "#FFFFFF", emoji: "📚", italicLabel: true  }
     ];
 
-    // Stato corrente
     let state = {
-      category: CATEGORIES[2], // CULTURA di default
+      category: CATEGORIES[2],
       title: "L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE",
       uppercase: true,
       fontSize: 62,
@@ -234,10 +234,8 @@
     let logoImg = new Image();
     logoImg.crossOrigin = "anonymous";
     let logoLoaded = false;
-
     let bgImageObj = null;
 
-    // Carica logo evitando blocchi CORS al download
     function loadLogo() {
       fetch(LOGO_URL)
         .then(res => res.blob())
@@ -250,14 +248,13 @@
           reader.readAsDataURL(blob);
         })
         .catch(() => {
-          // Fallback diretto se fetch non va
           logoImg.onload = () => { logoLoaded = true; drawCanvas(); };
           logoImg.src = LOGO_URL;
         });
     }
 
     // ==========================================
-    // AUTENTICAZIONE REDAZIONE
+    // AUTENTICAZIONE REDAZIONE (ALLINEATA AL WORKER)
     // ==========================================
     const loginScreen = document.getElementById("loginScreen");
     const appScreen = document.getElementById("appScreen");
@@ -272,59 +269,47 @@
       }
     }
 
-    function showApp(username) {
+    function showApp(displayName) {
       loginScreen.classList.add("hidden");
       appScreen.classList.remove("hidden");
-      document.getElementById("loggedUserLabel").textContent = "Redattore: " + username;
+      document.getElementById("loggedUserLabel").textContent = "Redattore: " + displayName;
       checkSavedDraft();
       document.fonts.ready.then(() => drawCanvas());
     }
 
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const userVal = document.getElementById("loginUser").value.trim().toLowerCase();
-      const passVal = document.getElementById("loginPass").value.trim();
+      const username = document.getElementById("username").value.trim().toLowerCase();
+      const password = document.getElementById("password").value.trim();
 
       loginError.classList.add("hidden");
       loginBtn.disabled = true;
-      loginBtn.textContent = "Verifica credenziali...";
+      loginBtn.textContent = "Accesso in corso...";
 
       try {
-        const res = await fetch(WORKER_USERS_URL);
-        if (!res.ok) throw new Error("Errore server");
-        const users = await res.json();
+        // Invia la richiesta POST al Worker esattamente come fa index.html
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "login", username, password })
+        });
 
-        // Verifica corrispondenza utente/password (supporta sia array che oggetto mappa)
-        let validUser = null;
-        if (Array.isArray(users)) {
-          validUser = users.find(u =>
-            (u.username && u.username.toLowerCase() === userVal && u.password === passVal) ||
-            (u.user && u.user.toLowerCase() === userVal && u.pass === passVal)
-          );
-        } else if (typeof users === "object" && users !== null) {
-          for (const key of Object.keys(users)) {
-            const u = users[key];
-            if (key.toLowerCase() === userVal && (u === passVal || u.password === passVal)) {
-              validUser = { name: u.name || key };
-              break;
-            }
-          }
-        }
+        const data = await res.json();
 
-        if (validUser) {
-          const displayName = validUser.name || validUser.username || userVal;
+        if (res.ok && (data.success || data.user || data.authenticated || data.role)) {
+          const displayName = (data.user && (data.user.name || data.user.username)) || data.name || username;
           sessionStorage.setItem("ermes_grafiche_user", displayName);
           showApp(displayName);
         } else {
-          loginError.textContent = "Nome utente o password non validi.";
+          loginError.textContent = data.error || data.message || "Credenziali non valide.";
           loginError.classList.remove("hidden");
         }
       } catch (err) {
-        loginError.textContent = "Impossibile connettersi al server della redazione.";
+        loginError.textContent = "Errore di connessione al server della redazione.";
         loginError.classList.remove("hidden");
       } finally {
         loginBtn.disabled = false;
-        loginBtn.textContent = "Accedi al Generatore";
+        loginBtn.textContent = "Accedi";
       }
     });
 
@@ -334,7 +319,7 @@
     });
 
     // ==========================================
-    // INIZIALIZZAZIONE INTERFACCIA E CONTROLLI
+    // INTERFACCIA E CONTROLLI
     // ==========================================
     const catContainer = document.getElementById("categoryButtons");
     function renderCategoryButtons() {
@@ -358,7 +343,6 @@
       });
     }
 
-    // Eventi input testo
     document.getElementById("titleInput").addEventListener("input", (e) => {
       state.title = e.target.value;
       drawCanvas();
@@ -385,7 +369,6 @@
       drawCanvas();
     });
 
-    // Caricamento immagine di sfondo
     document.getElementById("bgImageInput").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -399,7 +382,6 @@
         document.getElementById("imgScale").value = 1;
         document.getElementById("imgOffsetX").value = 0;
         document.getElementById("imgOffsetY").value = 0;
-
         loadBgImageFromDataUrl(state.bgImageDataUrl);
       };
       reader.readAsDataURL(file);
@@ -470,7 +452,6 @@
           imgScale: state.imgScale,
           imgOffsetX: state.imgOffsetX,
           imgOffsetY: state.imgOffsetY,
-          // Salviamo l'immagine solo se non supera i 2.5MB per non saturare localStorage
           bgImageDataUrl: (state.bgImageDataUrl && state.bgImageDataUrl.length < 2500000) ? state.bgImageDataUrl : null,
           savedAt: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
         };
@@ -478,7 +459,6 @@
         document.getElementById("loadDraftBtn").classList.remove("hidden");
         showToast("✓ Bozza salvata alle " + draftPayload.savedAt);
       } catch (e) {
-        // Fallback senza immagine se troppo pesante
         const lightDraft = { ...state, categoryId: state.category.id, bgImageDataUrl: null };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(lightDraft));
         document.getElementById("loadDraftBtn").classList.remove("hidden");
@@ -502,7 +482,6 @@
       state.imgOffsetY = d.imgOffsetY || 0;
       state.bgImageDataUrl = d.bgImageDataUrl || null;
 
-      // Aggiorna UI
       document.getElementById("titleInput").value = state.title;
       document.getElementById("uppercaseCheck").checked = state.uppercase;
       document.getElementById("fontSizeInput").value = state.fontSize;
@@ -527,14 +506,12 @@
     function wrapText(context, text, maxWidth) {
       const paragraphs = text.split("\n");
       let allLines = [];
-
       paragraphs.forEach(p => {
         const words = p.split(" ");
         let currentLine = "";
         for (let i = 0; i < words.length; i++) {
           const testLine = currentLine ? currentLine + " " + words[i] : words[i];
-          const metrics = context.measureText(testLine);
-          if (metrics.width > maxWidth && currentLine !== "") {
+          if (context.measureText(testLine).width > maxWidth && currentLine !== "") {
             allLines.push(currentLine);
             currentLine = words[i];
           } else {
@@ -551,7 +528,6 @@
       const H = 1350;
       ctx.clearRect(0, 0, W, H);
 
-      // 1. SFONDO (Foto o Colore Rubrica)
       if (bgImageObj) {
         const imgRatio = bgImageObj.width / bgImageObj.height;
         const canvasRatio = W / H;
@@ -569,7 +545,6 @@
         const y = (H - drawH) / 2 + state.imgOffsetY;
         ctx.drawImage(bgImageObj, x, y, drawW, drawH);
 
-        // Leggera vignettatura scura in alto e in basso per leggibilità
         const topGrad = ctx.createLinearGradient(0, 0, 0, 260);
         topGrad.addColorStop(0, "rgba(0,0,0,0.45)");
         topGrad.addColorStop(1, "rgba(0,0,0,0)");
@@ -580,7 +555,6 @@
         ctx.fillRect(0, 0, W, H);
       }
 
-      // Sfumatura scura in basso (presente in tutti i template per il footer)
       const bottomGrad = ctx.createLinearGradient(0, H - 360, 0, H);
       bottomGrad.addColorStop(0, "rgba(0,0,0,0)");
       bottomGrad.addColorStop(0.55, "rgba(0,0,0,0.55)");
@@ -588,50 +562,39 @@
       ctx.fillStyle = bottomGrad;
       ctx.fillRect(0, H - 360, W, 360);
 
-      // 2. LOGO QUADRATO IN ALTO A SINISTRA
-      const logoBoxX = 108;
-      const logoBoxY = 108;
-      const logoBoxSize = 130;
+      // Logo alto sinistra
+      const logoBoxX = 108, logoBoxY = 108, logoBoxSize = 130;
       ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize);
-
       if (logoLoaded) {
         const pad = 16;
         ctx.drawImage(logoImg, logoBoxX + pad, logoBoxY + pad, logoBoxSize - pad * 2, logoBoxSize - pad * 2);
       }
 
-      // 3. ETICHETTA "ERMES UMG" IN ALTO A DESTRA
-      const badgeW = 160;
-      const badgeH = 48;
-      const badgeX = W - 108 - badgeW;
-      const badgeY = 108;
+      // Badge ERMES UMG alto destra
+      const badgeW = 160, badgeH = 48;
+      const badgeX = W - 108 - badgeW, badgeY = 108;
       ctx.strokeStyle = "#FFFFFF";
       ctx.lineWidth = 2;
       ctx.strokeRect(badgeX, badgeY, badgeW, badgeH);
-
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "italic 700 22px 'Inter', sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("ERMES UMG", badgeX + badgeW / 2, badgeY + badgeH / 2 + 1);
 
-      // 4. MISURAZIONE CONTENUTO DEL BOX BIANCO (FUMETTO)
-      const boxX = 108;
-      const boxW = W - 216; // 864px
-      const innerPadX = 52;
-      const innerMaxW = boxW - innerPadX * 2; // 760px
+      // Box bianco fumetto
+      const boxX = 108, boxW = W - 216, innerPadX = 52;
+      const innerMaxW = boxW - innerPadX * 2;
 
-      // Prepara Titolo
       const rawTitle = state.uppercase ? state.title.toUpperCase() : state.title;
       ctx.font = `700 ${state.fontSize}px 'Oswald', sans-serif`;
       const titleLines = rawTitle.trim() ? wrapText(ctx, rawTitle, innerMaxW) : [];
       const titleLineHeight = Math.round(state.fontSize * 1.16);
       const titleBlockH = titleLines.length * titleLineHeight;
 
-      // Prepara Sottotitolo (se presente)
       let subLines = [];
-      const subFontSize = 26;
-      const subLineHeight = 35;
+      const subFontSize = 26, subLineHeight = 35;
       if (state.subtitle.trim()) {
         if (state.subtitleStyle === "bold") {
           ctx.font = `700 ${subFontSize}px 'Inter', sans-serif`;
@@ -646,24 +609,16 @@
       }
       const subBlockH = subLines.length > 0 ? (24 + subLines.length * subLineHeight) : 0;
 
-      // Calcolo altezza dinamica del fumetto bianco
-      const tagBarH = 74;
-      const topPadding = 46;
-      const gapTagTitle = 34;
-      const bottomPadding = 48;
+      const tagBarH = 74, topPadding = 46, gapTagTitle = 34, bottomPadding = 48;
       const boxH = Math.max(360, topPadding + tagBarH + gapTagTitle + titleBlockH + subBlockH + bottomPadding);
-
-      // Posiziona il box bianco ancorato sopra il footer (y fondo = 1110px)
       const boxBottomY = 1110;
       const boxY = boxBottomY - boxH;
 
-      // Disegna Box Bianco + Punta Triangolare Fumetto
       ctx.fillStyle = "#FFFFFF";
       ctx.beginPath();
       ctx.moveTo(boxX, boxY);
       ctx.lineTo(boxX + boxW, boxY);
       ctx.lineTo(boxX + boxW, boxBottomY);
-      // Punta triangolare in basso a destra (come nei layout Canva)
       ctx.lineTo(boxX + boxW - 50, boxBottomY);
       ctx.lineTo(boxX + boxW - 102, boxBottomY + 56);
       ctx.lineTo(boxX + boxW - 154, boxBottomY);
@@ -671,50 +626,43 @@
       ctx.closePath();
       ctx.fill();
 
-      // 5. FASCIA COLORATA RUBRICA DENTRO IL BOX
-      const tagX = boxX + innerPadX;
-      const tagY = boxY + topPadding;
-      const catFontStyle = state.category.italicLabel ? "italic 700 46px 'Oswald', sans-serif" : "700 46px 'Oswald', sans-serif";
-      ctx.font = catFontStyle;
+      // Barra rubrica
+      const tagX = boxX + innerPadX, tagY = boxY + topPadding;
+      ctx.font = state.category.italicLabel ? "italic 700 46px 'Oswald', sans-serif" : "700 46px 'Oswald', sans-serif";
       const labelWidth = ctx.measureText(state.category.label).width;
       const tagW = Math.max(390, labelWidth + 145);
 
       ctx.fillStyle = state.category.color;
       ctx.fillRect(tagX, tagY, tagW, tagBarH);
 
-      // Testo rubrica
       ctx.fillStyle = state.category.textColor;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       ctx.fillText(state.category.label, tagX + 20, tagY + tagBarH / 2 + 2);
 
-      // Emoji / Icona rubrica a destra nella barra
       ctx.font = "42px sans-serif";
       ctx.textAlign = "right";
       ctx.fillText(state.category.emoji, tagX + tagW - 18, tagY + tagBarH / 2 + 3);
 
-      // 6. DISEGNO TITOLO PRINCIPALE
+      // Titolo
       let cursorY = tagY + tagBarH + gapTagTitle;
       ctx.fillStyle = "#0A0A0A";
       ctx.font = `700 ${state.fontSize}px 'Oswald', sans-serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-
       titleLines.forEach(line => {
         ctx.fillText(line, tagX, cursorY);
         cursorY += titleLineHeight;
       });
 
-      // 7. DISEGNO SOTTOTITOLO / AUTORE
+      // Sottotitolo
       if (subLines.length > 0) {
         cursorY += 20;
-        if (state.subtitleStyle === "bold") {
-          ctx.font = `700 ${subFontSize}px 'Inter', sans-serif`;
-        } else if (state.subtitleStyle === "italic") {
-          ctx.font = `italic 700 ${subFontSize}px 'Inter', sans-serif`;
-        } else {
-          ctx.font = `500 ${subFontSize}px 'Inter', sans-serif`;
-        }
+        ctx.font = state.subtitleStyle === "bold"
+          ? `700 ${subFontSize}px 'Inter', sans-serif`
+          : state.subtitleStyle === "italic"
+            ? `italic 700 ${subFontSize}px 'Inter', sans-serif`
+            : `500 ${subFontSize}px 'Inter', sans-serif`;
         ctx.fillStyle = "#1E293B";
         subLines.forEach(line => {
           ctx.fillText(line, tagX, cursorY);
@@ -722,7 +670,7 @@
         });
       }
 
-      // 8. FOOTER IN BASSO ("leggi l'articolo completo ->" e "www.ermes-umg.it")
+      // Footer
       const footerY = 1228;
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "400 25px 'Inter', sans-serif";
@@ -731,10 +679,8 @@
       const ctaText = "leggi l'articolo completo";
       ctx.fillText(ctaText, 108, footerY);
 
-      // Cerchio bianco con freccia nera a destra del testo
       const ctaW = ctx.measureText(ctaText).width;
-      const circleX = 108 + ctaW + 24;
-      const circleY = footerY;
+      const circleX = 108 + ctaW + 24, circleY = footerY;
       ctx.beginPath();
       ctx.arc(circleX, circleY, 13, 0, Math.PI * 2);
       ctx.fillStyle = "#FFFFFF";
@@ -750,16 +696,12 @@
       ctx.lineTo(circleX + 1, circleY + 4);
       ctx.stroke();
 
-      // URL sito a destra
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "400 25px 'Inter', sans-serif";
       ctx.textAlign = "right";
       ctx.fillText("www.ermes-umg.it", W - 108, footerY);
     }
 
-    // ==========================================
-    // DOWNLOAD PNG ALTA RISOLUZIONE
-    // ==========================================
     document.getElementById("downloadBtn").addEventListener("click", () => {
       const slug = state.category.id;
       const dateStr = new Date().toISOString().slice(0, 10);
@@ -770,7 +712,6 @@
       showToast("⬇️ Immagine scaricata!");
     });
 
-    // Avvio
     loadLogo();
     renderCategoryButtons();
     checkAuth();
