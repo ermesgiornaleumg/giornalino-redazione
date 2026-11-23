@@ -79,7 +79,7 @@
   <div id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 text-center">
       <div class="flex justify-center mb-4">
-        <img src="https://www.ermes-umg.it/favicon.ico" alt="Ermes UMG Logo" class="h-16 w-16 object-contain rounded-xl shadow-sm border border-slate-100 p-1">
+        <img src="https://redattori.ermes-umg.it/images.jpeg" alt="Ermes UMG Logo" class="h-16 w-16 object-contain rounded-xl shadow-sm border border-slate-100 p-1">
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Redazione Ermes UMG</h1>
       <p class="text-slate-500 text-sm mt-1 mb-6">Accedi per gestire articoli, prenotazioni e comunicati</p>
@@ -108,7 +108,7 @@
     <div>
       <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-2 shadow-sm">
         <div class="flex items-center space-x-3">
-          <img src="https://www.ermes-umg.it/favicon.ico" alt="Logo" class="h-8 w-8 object-contain">
+          <img src="https://redattori.ermes-umg.it/images.jpeg" alt="Logo" class="h-8 w-8 object-contain">
           <span class="font-bold text-base sm:text-lg text-slate-900">Ermes UMG</span>
           <span id="roleBadge" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">Redattore</span>
         </div>
@@ -772,7 +772,7 @@
       if (igInitialized) return;
       igInitialized = true;
 
-      fetch("https://www.ermes-umg.it/favicon.ico")
+      fetch("https://redattori.ermes-umg.it/images.jpeg")
         .then(res => res.blob())
         .then(blob => {
           const reader = new FileReader();
