@@ -239,13 +239,13 @@
         </div>
       </main>
 
-      <!-- SCHEDA NUOVA: GENERATORE GRAFICHE INSTAGRAM -->
+      <!-- SCHEDA GRAFICHE INSTAGRAM -->
       <div id="tabGrafiche" class="hidden max-w-5xl mx-auto my-6 px-4 space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-100">
             <div>
               <h3 class="text-lg font-bold text-slate-900">🎨 Generatore Grafiche Instagram (4:5)</h3>
-              <p class="text-xs text-slate-500">Crea e scarica i post pronti per Instagram senza usare Canva</p>
+              <p class="text-xs text-slate-500">Crea la copertina e la seconda slide con estratto pronte per Instagram</p>
             </div>
             <div class="flex items-center gap-2">
               <button id="igSaveDraftBtn" type="button" onclick="saveIgDraft()"
@@ -262,13 +262,28 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <!-- Controlli a sinistra -->
             <div class="lg:col-span-7 space-y-5">
+
+              <!-- Selettore Slide 1 / Slide 2 -->
+              <div class="bg-slate-50 p-2 rounded-xl border border-slate-200 grid grid-cols-2 gap-2">
+                <button type="button" id="igSlide1TabBtn" onclick="setIgSlide(1)"
+                  class="py-2 px-3 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition">
+                  1️⃣ Slide 1: Copertina Post
+                </button>
+                <button type="button" id="igSlide2TabBtn" onclick="setIgSlide(2)"
+                  class="py-2 px-3 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200/70 transition">
+                  2️⃣ Slide 2: Estratto / Citazione
+                </button>
+              </div>
+
+              <!-- 1. Rubrica -->
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Rubrica / Categoria</label>
                 <div class="grid grid-cols-3 gap-2" id="igCategoryButtons"></div>
               </div>
 
-              <div class="space-y-4 pt-3 border-t border-slate-100">
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">2. Testi della Grafica</label>
+              <!-- CONTROLLI SLIDE 1 (COPERTINA) -->
+              <div id="igSlide1Controls" class="space-y-4 pt-3 border-t border-slate-100">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">2. Testi & Autori Copertina</label>
                 <div>
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-xs font-semibold text-slate-700">Titolo Principale</span>
@@ -281,28 +296,79 @@
                     class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium">L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE</textarea>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Dimensione Titolo (<span id="igFontSizeVal">62</span>px)</label>
+                  <input type="range" id="igFontSizeInput" min="40" max="86" value="62" oninput="updateIgState()" class="w-full accent-blue-600">
+                </div>
+
+                <!-- Autore Principale + Co-Autori dal server -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                   <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dimensione Titolo (<span id="igFontSizeVal">62</span>px)</label>
-                    <input type="range" id="igFontSizeInput" min="40" max="86" value="62" oninput="updateIgState()" class="w-full accent-blue-600">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Autore Principale (dal server)</label>
+                    <select id="igMainAuthorSelect" onchange="onIgAuthorSelectionChange()" class="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs bg-white outline-none">
+                      <option value="">-- Nessun autore --</option>
+                    </select>
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Stile Sottotitolo</label>
-                    <select id="igSubtitleStyleInput" onchange="updateIgState()" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white outline-none">
-                      <option value="normal">Normale (Estratto / Autore)</option>
-                      <option value="bold">Grassetto Maiuscolo (Nome Autore)</option>
-                      <option value="italic">Corsivo Grassetto (Citazione)</option>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Co-Autori (opzionale)</label>
+                    <div id="igCoAuthorsList" class="border rounded-lg p-2 bg-white max-h-24 overflow-y-auto space-y-1 text-xs"></div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Riga Firma / Sottotitolo (modificabile)</label>
+                    <input type="text" id="igSubtitleInput" oninput="updateIgState()" placeholder="Compilato in automatico scegliendo l'autore..."
+                      class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-xs">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Stile Riga</label>
+                    <select id="igSubtitleStyleInput" onchange="updateIgState()" class="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs bg-white outline-none">
+                      <option value="normal">Normale (di Nome...)</option>
+                      <option value="bold">Grassetto Maiuscolo</option>
+                      <option value="italic">Corsivo Grassetto</option>
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <!-- CONTROLLI SLIDE 2 (ESTRATTO CAROSELLO) -->
+              <div id="igSlide2Controls" class="hidden space-y-4 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">2. Contenuto Seconda Slide (Estratto)</label>
+                  <span class="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">Carosello IG</span>
+                </div>
 
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Sottotitolo / Autore / Breve Estratto (Opzionale)</label>
-                  <textarea id="igSubtitleInput" rows="2" oninput="updateIgState()" placeholder="Es. di Ludovica Mannarino oppure breve estratto..."
-                    class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-xs"></textarea>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Occhiello / Titolino sopra l'estratto (Opzionale)</label>
+                  <input type="text" id="igSlide2EyebrowInput" oninput="updateIgState()" placeholder="Es. IN EVIDENZA • DAL NOSTRO ARTICOLO"
+                    value="DAL NOSTRO ARTICOLO"
+                    class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold uppercase">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Testo Estratto / Citazione per attirare l'attenzione</label>
+                  <textarea id="igSlide2BodyInput" rows="5" oninput="updateIgState()" placeholder="Incolla qui un passaggio interessante o una frase chiave dell'articolo..."
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm leading-relaxed">“Un’iniziativa che mette al centro i giovani, l’arte e la partecipazione attiva della comunità universitaria per costruire un dialogo concreto sui temi della pace.”</textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dimensione Testo Estratto (<span id="igSlide2FontSizeVal">36</span>px)</label>
+                    <input type="range" id="igSlide2FontSizeInput" min="26" max="50" value="36" oninput="updateIgState()" class="w-full accent-blue-600">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Stile Testo Estratto</label>
+                    <select id="igSlide2StyleInput" onchange="updateIgState()" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white outline-none">
+                      <option value="normal">Normale Pulito</option>
+                      <option value="italic">Corsivo Citazione</option>
+                      <option value="bold">Grassetto Evidenziato</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
+              <!-- 3. Immagine di Sfondo (condivisa tra Slide 1 e Slide 2) -->
               <div class="space-y-3 pt-3 border-t border-slate-100">
                 <div class="flex items-center justify-between">
                   <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">3. Immagine di Sfondo</label>
@@ -333,11 +399,11 @@
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <span id="igStatusMsg" class="text-xs font-medium text-emerald-600"></span>
-                <button type="button" onclick="downloadIgGraphic()"
+                <button type="button" id="igDownloadBtn" onclick="downloadIgGraphic()"
                   class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-sm transition text-xs flex items-center justify-center gap-2">
-                  ⬇️ Scarica Grafica Instagram (PNG 1080×1350)
+                  ⬇️ Scarica Slide 1 (Copertina PNG)
                 </button>
               </div>
             </div>
@@ -345,7 +411,7 @@
             <!-- Anteprima a destra -->
             <div class="lg:col-span-5 flex flex-col items-center">
               <div class="w-full max-w-[400px] flex items-center justify-between mb-2 px-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Anteprima Live</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500" id="igPreviewLabel">Anteprima Slide 1 (Copertina)</span>
                 <span class="text-[11px] text-slate-400">1080 × 1350 px</span>
               </div>
               <div class="ig-canvas-container rounded-lg overflow-hidden bg-slate-800">
@@ -479,6 +545,7 @@
                     <th class="p-2">Ruolo</th>
                     <th class="p-2">Ultimo Accesso</th>
                     <th class="p-2">Permesso Statistiche</th>
+                    <th class="p-2">Permesso Grafiche IG</th>
                     <th class="p-2">Password</th>
                     <th class="p-2">Azione</th>
                   </tr>
@@ -508,12 +575,6 @@
     let currentUser = null;
     let activeEditingDraft = null;
 
-    // ==========================================
-    // UTENTI ABILITATI ALLE GRAFICHE INSTAGRAM
-    // Inserisci qui gli username (in minuscolo) abilitati
-    // ==========================================
-    const ABILITATI_GRAFICHE = ["admin", "bruno.rachiele"];
-
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -540,6 +601,16 @@
       } catch(e) {}
     }
     fetchUsers();
+
+    function refreshGraficheTabVisibility() {
+      if (!currentUser) return;
+      if (currentUser.role === "admin" || currentUser.canUseGraphics) {
+        document.getElementById("tabGraficheBtn").classList.remove("hidden");
+        initIgGenerator();
+      } else {
+        document.getElementById("tabGraficheBtn").classList.add("hidden");
+      }
+    }
 
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
@@ -574,13 +645,7 @@
         const roleLabel = currentUser.role === "admin" ? "Amministratore" : (currentUser.role === "head_editor" ? "Caporedattore" : "Redattore");
         document.getElementById("roleBadge").innerText = roleLabel;
 
-        // Mostra scheda Grafiche IG solo agli utenti abilitati
-        if (currentUser.role === "admin" || ABILITATI_GRAFICHE.includes(u)) {
-          document.getElementById("tabGraficheBtn").classList.remove("hidden");
-          initIgGenerator();
-        } else {
-          document.getElementById("tabGraficheBtn").classList.add("hidden");
-        }
+        refreshGraficheTabVisibility();
 
         if (currentUser.role === "admin" || currentUser.role === "head_editor") {
           document.getElementById("nonAccessibleNotice").classList.add("hidden");
@@ -641,6 +706,7 @@
       } else if (tabName === 'grafiche') {
         document.getElementById("tabGrafiche").classList.remove("hidden");
         document.getElementById("tabGraficheBtn").className = activeClass;
+        populateIgAuthorsSelectors();
         document.fonts.ready.then(() => drawIgCanvas());
       } else if (tabName === 'stats') {
         document.getElementById("tabStats").classList.remove("hidden");
@@ -661,7 +727,7 @@
     }
 
     // ==========================================
-    // MOTORE GENERATORE GRAFICHE INSTAGRAM
+    // MOTORE GENERATORE GRAFICHE INSTAGRAM (SLIDE 1 + SLIDE 2)
     // ==========================================
     const IG_CATEGORIES = [
       { id: "martedi",   label: "mARTEdì",    color: "#EF2B2D", bgSolid: "#C82325", textColor: "#FFFFFF", emoji: "🎨", italicLabel: false },
@@ -676,12 +742,19 @@
     ];
 
     let igState = {
+      activeSlide: 1,
       category: IG_CATEGORIES[2],
       title: "L’UNIVERSITÀ PREMIA TALENTI E CREATIVITÀ: UN CONTEST PER LA PACE",
       uppercase: true,
       fontSize: 62,
+      mainAuthorKey: "",
+      coAuthorKeys: [],
       subtitle: "",
       subtitleStyle: "normal",
+      slide2Eyebrow: "DAL NOSTRO ARTICOLO",
+      slide2Body: "“Un’iniziativa che mette al centro i giovani, l’arte e la partecipazione attiva della comunità universitaria per costruire un dialogo concreto sui temi della pace.”",
+      slide2FontSize: 36,
+      slide2Style: "normal",
       bgImageDataUrl: null,
       imgScale: 1,
       imgOffsetX: 0,
@@ -692,8 +765,13 @@
     igLogoImg.crossOrigin = "anonymous";
     let igLogoLoaded = false;
     let igBgImageObj = null;
+    let igInitialized = false;
 
     function initIgGenerator() {
+      populateIgAuthorsSelectors();
+      if (igInitialized) return;
+      igInitialized = true;
+
       fetch("https://www.ermes-umg.it/favicon.ico")
         .then(res => res.blob())
         .then(blob => {
@@ -710,10 +788,111 @@
         });
 
       renderIgCategoryButtons();
-      if (localStorage.getItem("ermes_ig_draft_v1")) {
+      if (localStorage.getItem("ermes_ig_draft_v2")) {
         document.getElementById("igLoadDraftBtn").classList.remove("hidden");
       }
       document.fonts.ready.then(() => drawIgCanvas());
+    }
+
+    function populateIgAuthorsSelectors() {
+      const select = document.getElementById("igMainAuthorSelect");
+      const coContainer = document.getElementById("igCoAuthorsList");
+      if (!select || !coContainer) return;
+
+      const prevMain = igState.mainAuthorKey;
+      select.innerHTML = `<option value="">-- Nessun autore / Libero --</option>`;
+      coContainer.innerHTML = "";
+
+      Object.keys(users).forEach(key => {
+        const u = users[key];
+        if (!u || !u.name) return;
+
+        // Opzione nel select autore principale
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = u.name;
+        select.appendChild(opt);
+
+        // Checkbox nei co-autori
+        const label = document.createElement("label");
+        label.className = "flex items-center space-x-2 text-slate-700 cursor-pointer hover:bg-slate-50 p-0.5 rounded";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = key;
+        cb.className = "ig-coauthor-cb rounded border-slate-300 text-blue-600 h-3.5 w-3.5";
+        cb.checked = igState.coAuthorKeys.includes(key);
+        cb.onchange = () => onIgAuthorSelectionChange();
+
+        const span = document.createElement("span");
+        span.textContent = u.name;
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        coContainer.appendChild(label);
+      });
+
+      if (prevMain && users[prevMain]) {
+        select.value = prevMain;
+      }
+    }
+
+    function onIgAuthorSelectionChange() {
+      const mainKey = document.getElementById("igMainAuthorSelect").value;
+      const checkedCbs = Array.from(document.querySelectorAll(".ig-coauthor-cb:checked")).map(cb => cb.value);
+
+      igState.mainAuthorKey = mainKey;
+      igState.coAuthorKeys = checkedCbs;
+
+      const names = [];
+      if (mainKey && users[mainKey]) {
+        names.push(users[mainKey].name);
+      }
+      checkedCbs.forEach(k => {
+        if (k !== mainKey && users[k]) {
+          names.push(users[k].name);
+        }
+      });
+
+      let formattedByline = "";
+      if (names.length === 1) {
+        formattedByline = "di " + names[0];
+      } else if (names.length === 2) {
+        formattedByline = "di " + names[0] + " e " + names[1];
+      } else if (names.length > 2) {
+        const last = names.pop();
+        formattedByline = "di " + names.join(", ") + " e " + last;
+      }
+
+      document.getElementById("igSubtitleInput").value = formattedByline;
+      igState.subtitle = formattedByline;
+      drawIgCanvas();
+    }
+
+    function setIgSlide(slideNum) {
+      igState.activeSlide = slideNum;
+      const btn1 = document.getElementById("igSlide1TabBtn");
+      const btn2 = document.getElementById("igSlide2TabBtn");
+      const ctrl1 = document.getElementById("igSlide1Controls");
+      const ctrl2 = document.getElementById("igSlide2Controls");
+      const dlBtn = document.getElementById("igDownloadBtn");
+      const prevLbl = document.getElementById("igPreviewLabel");
+
+      if (slideNum === 1) {
+        btn1.className = "py-2 px-3 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition";
+        btn2.className = "py-2 px-3 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200/70 transition";
+        ctrl1.classList.remove("hidden");
+        ctrl2.classList.add("hidden");
+        dlBtn.innerHTML = "⬇️ Scarica Slide 1 (Copertina PNG)";
+        prevLbl.textContent = "Anteprima Slide 1 (Copertina)";
+      } else {
+        btn2.className = "py-2 px-3 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition";
+        btn1.className = "py-2 px-3 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200/70 transition";
+        ctrl2.classList.remove("hidden");
+        ctrl1.classList.add("hidden");
+        dlBtn.innerHTML = "⬇️ Scarica Slide 2 (Estratto PNG)";
+        prevLbl.textContent = "Anteprima Slide 2 (Estratto)";
+      }
+      drawIgCanvas();
     }
 
     function renderIgCategoryButtons() {
@@ -745,6 +924,13 @@
       document.getElementById("igFontSizeVal").textContent = igState.fontSize;
       igState.subtitle = document.getElementById("igSubtitleInput").value;
       igState.subtitleStyle = document.getElementById("igSubtitleStyleInput").value;
+
+      igState.slide2Eyebrow = document.getElementById("igSlide2EyebrowInput").value;
+      igState.slide2Body = document.getElementById("igSlide2BodyInput").value;
+      igState.slide2FontSize = parseInt(document.getElementById("igSlide2FontSizeInput").value, 10);
+      document.getElementById("igSlide2FontSizeVal").textContent = igState.slide2FontSize;
+      igState.slide2Style = document.getElementById("igSlide2StyleInput").value;
+
       igState.imgScale = parseFloat(document.getElementById("igImgScale").value);
       igState.imgOffsetX = parseFloat(document.getElementById("igImgOffsetX").value);
       igState.imgOffsetY = parseFloat(document.getElementById("igImgOffsetY").value);
@@ -810,35 +996,47 @@
           title: igState.title,
           uppercase: igState.uppercase,
           fontSize: igState.fontSize,
+          mainAuthorKey: igState.mainAuthorKey,
+          coAuthorKeys: igState.coAuthorKeys,
           subtitle: igState.subtitle,
           subtitleStyle: igState.subtitleStyle,
+          slide2Eyebrow: igState.slide2Eyebrow,
+          slide2Body: igState.slide2Body,
+          slide2FontSize: igState.slide2FontSize,
+          slide2Style: igState.slide2Style,
           imgScale: igState.imgScale,
           imgOffsetX: igState.imgOffsetX,
           imgOffsetY: igState.imgOffsetY,
           bgImageDataUrl: (igState.bgImageDataUrl && igState.bgImageDataUrl.length < 2500000) ? igState.bgImageDataUrl : null,
           savedAt: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
         };
-        localStorage.setItem("ermes_ig_draft_v1", JSON.stringify(payload));
+        localStorage.setItem("ermes_ig_draft_v2", JSON.stringify(payload));
         document.getElementById("igLoadDraftBtn").classList.remove("hidden");
         setIgStatus("✓ Bozza salvata alle " + payload.savedAt);
       } catch (e) {
         const light = { ...igState, categoryId: igState.category.id, bgImageDataUrl: null };
-        localStorage.setItem("ermes_ig_draft_v1", JSON.stringify(light));
+        localStorage.setItem("ermes_ig_draft_v2", JSON.stringify(light));
         document.getElementById("igLoadDraftBtn").classList.remove("hidden");
         setIgStatus("✓ Bozza testi salvata!");
       }
     }
 
     function loadIgDraft() {
-      const raw = localStorage.getItem("ermes_ig_draft_v1");
+      const raw = localStorage.getItem("ermes_ig_draft_v2");
       if (!raw) return;
       const d = JSON.parse(raw);
       igState.category = IG_CATEGORIES.find(c => c.id === d.categoryId) || IG_CATEGORIES[0];
       igState.title = d.title || "";
       igState.uppercase = d.uppercase !== undefined ? d.uppercase : true;
       igState.fontSize = d.fontSize || 62;
+      igState.mainAuthorKey = d.mainAuthorKey || "";
+      igState.coAuthorKeys = d.coAuthorKeys || [];
       igState.subtitle = d.subtitle || "";
       igState.subtitleStyle = d.subtitleStyle || "normal";
+      igState.slide2Eyebrow = d.slide2Eyebrow || "DAL NOSTRO ARTICOLO";
+      igState.slide2Body = d.slide2Body || "";
+      igState.slide2FontSize = d.slide2FontSize || 36;
+      igState.slide2Style = d.slide2Style || "normal";
       igState.imgScale = d.imgScale || 1;
       igState.imgOffsetX = d.imgOffsetX || 0;
       igState.imgOffsetY = d.imgOffsetY || 0;
@@ -850,10 +1048,16 @@
       document.getElementById("igFontSizeVal").textContent = igState.fontSize;
       document.getElementById("igSubtitleInput").value = igState.subtitle;
       document.getElementById("igSubtitleStyleInput").value = igState.subtitleStyle;
+      document.getElementById("igSlide2EyebrowInput").value = igState.slide2Eyebrow;
+      document.getElementById("igSlide2BodyInput").value = igState.slide2Body;
+      document.getElementById("igSlide2FontSizeInput").value = igState.slide2FontSize;
+      document.getElementById("igSlide2FontSizeVal").textContent = igState.slide2FontSize;
+      document.getElementById("igSlide2StyleInput").value = igState.slide2Style;
       document.getElementById("igImgScale").value = igState.imgScale;
       document.getElementById("igImgOffsetX").value = igState.imgOffsetX;
       document.getElementById("igImgOffsetY").value = igState.imgOffsetY;
 
+      populateIgAuthorsSelectors();
       renderIgCategoryButtons();
       loadIgBgImage(igState.bgImageDataUrl);
       setIgStatus("📂 Bozza ripristinata!");
@@ -886,6 +1090,7 @@
       const W = 1080, H = 1350;
       ctx.clearRect(0, 0, W, H);
 
+      // 1. SFONDO
       if (igBgImageObj) {
         const imgRatio = igBgImageObj.width / igBgImageObj.height;
         const canvasRatio = W / H;
@@ -902,6 +1107,12 @@
         const x = (W - drawW) / 2 + igState.imgOffsetX;
         const y = (H - drawH) / 2 + igState.imgOffsetY;
         ctx.drawImage(igBgImageObj, x, y, drawW, drawH);
+
+        // Sulla Slide 2 aggiungiamo un leggero velo scuro uniforme per far risaltare il box dell'estratto
+        if (igState.activeSlide === 2) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+          ctx.fillRect(0, 0, W, H);
+        }
 
         const topGrad = ctx.createLinearGradient(0, 0, 0, 260);
         topGrad.addColorStop(0, "rgba(0,0,0,0.45)");
@@ -920,7 +1131,7 @@
       ctx.fillStyle = bottomGrad;
       ctx.fillRect(0, H - 360, W, 360);
 
-      // Logo quadrato alto sinistra
+      // 2. LOGO QUADRATO ALTO SINISTRA
       const logoBoxX = 108, logoBoxY = 108, logoBoxSize = 130;
       ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize);
@@ -929,7 +1140,7 @@
         ctx.drawImage(igLogoImg, logoBoxX + pad, logoBoxY + pad, logoBoxSize - pad * 2, logoBoxSize - pad * 2);
       }
 
-      // Badge ERMES UMG alto destra
+      // 3. BADGE ERMES UMG ALTO DESTRA
       const badgeW = 160, badgeH = 48;
       const badgeX = W - 108 - badgeW, badgeY = 108;
       ctx.strokeStyle = "#FFFFFF";
@@ -941,100 +1152,147 @@
       ctx.textBaseline = "middle";
       ctx.fillText("ERMES UMG", badgeX + badgeW / 2, badgeY + badgeH / 2 + 1);
 
-      // Box bianco fumetto
       const boxX = 108, boxW = W - 216, innerPadX = 52;
       const innerMaxW = boxW - innerPadX * 2;
+      const tagBarH = 74, topPadding = 46, bottomPadding = 48;
+      const boxBottomY = 1110;
 
-      const rawTitle = igState.uppercase ? igState.title.toUpperCase() : igState.title;
-      ctx.font = `700 ${igState.fontSize}px 'Oswald', sans-serif`;
-      const titleLines = rawTitle.trim() ? wrapIgText(ctx, rawTitle, innerMaxW) : [];
-      const titleLineHeight = Math.round(igState.fontSize * 1.16);
-      const titleBlockH = titleLines.length * titleLineHeight;
+      if (igState.activeSlide === 1) {
+        // =====================================
+        // DISEGNO SLIDE 1: COPERTINA ARTICOLO
+        // =====================================
+        const rawTitle = igState.uppercase ? igState.title.toUpperCase() : igState.title;
+        ctx.font = `700 ${igState.fontSize}px 'Oswald', sans-serif`;
+        const titleLines = rawTitle.trim() ? wrapIgText(ctx, rawTitle, innerMaxW) : [];
+        const titleLineHeight = Math.round(igState.fontSize * 1.16);
+        const titleBlockH = titleLines.length * titleLineHeight;
 
-      let subLines = [];
-      const subFontSize = 26, subLineHeight = 35;
-      if (igState.subtitle.trim()) {
-        if (igState.subtitleStyle === "bold") {
-          ctx.font = `700 ${subFontSize}px sans-serif`;
-          subLines = wrapIgText(ctx, igState.subtitle.toUpperCase(), innerMaxW);
-        } else if (igState.subtitleStyle === "italic") {
-          ctx.font = `italic 700 ${subFontSize}px sans-serif`;
-          subLines = wrapIgText(ctx, igState.subtitle, innerMaxW);
+        let subLines = [];
+        const subFontSize = 26, subLineHeight = 35;
+        if (igState.subtitle.trim()) {
+          if (igState.subtitleStyle === "bold") {
+            ctx.font = `700 ${subFontSize}px sans-serif`;
+            subLines = wrapIgText(ctx, igState.subtitle.toUpperCase(), innerMaxW);
+          } else if (igState.subtitleStyle === "italic") {
+            ctx.font = `italic 700 ${subFontSize}px sans-serif`;
+            subLines = wrapIgText(ctx, igState.subtitle, innerMaxW);
+          } else {
+            ctx.font = `500 ${subFontSize}px sans-serif`;
+            subLines = wrapIgText(ctx, igState.subtitle, innerMaxW);
+          }
+        }
+        const subBlockH = subLines.length > 0 ? (24 + subLines.length * subLineHeight) : 0;
+
+        const gapTagTitle = 34;
+        const boxH = Math.max(360, topPadding + tagBarH + gapTagTitle + titleBlockH + subBlockH + bottomPadding);
+        const boxY = boxBottomY - boxH;
+
+        drawSpeechBubbleBox(ctx, boxX, boxY, boxW, boxBottomY);
+        drawCategoryTag(ctx, boxX + innerPadX, boxY + topPadding, tagBarH);
+
+        let cursorY = boxY + topPadding + tagBarH + gapTagTitle;
+        ctx.fillStyle = "#0A0A0A";
+        ctx.font = `700 ${igState.fontSize}px 'Oswald', sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        titleLines.forEach(line => {
+          ctx.fillText(line, boxX + innerPadX, cursorY);
+          cursorY += titleLineHeight;
+        });
+
+        if (subLines.length > 0) {
+          cursorY += 20;
+          ctx.font = igState.subtitleStyle === "bold"
+            ? `700 ${subFontSize}px sans-serif`
+            : igState.subtitleStyle === "italic"
+              ? `italic 700 ${subFontSize}px sans-serif`
+              : `500 ${subFontSize}px sans-serif`;
+          ctx.fillStyle = "#1E293B";
+          subLines.forEach(line => {
+            ctx.fillText(line, boxX + innerPadX, cursorY);
+            cursorY += subLineHeight;
+          });
+        }
+      } else {
+        // =====================================
+        // DISEGNO SLIDE 2: ESTRATTO CAROSELLO
+        // =====================================
+        const bodyFontSize = igState.slide2FontSize;
+        const bodyLineHeight = Math.round(bodyFontSize * 1.38);
+
+        if (igState.slide2Style === "italic") {
+          ctx.font = `italic 600 ${bodyFontSize}px sans-serif`;
+        } else if (igState.slide2Style === "bold") {
+          ctx.font = `700 ${bodyFontSize}px sans-serif`;
         } else {
-          ctx.font = `500 ${subFontSize}px sans-serif`;
-          subLines = wrapIgText(ctx, igState.subtitle, innerMaxW);
+          ctx.font = `500 ${bodyFontSize}px sans-serif`;
+        }
+
+        const bodyLines = igState.slide2Body.trim() ? wrapIgText(ctx, igState.slide2Body, innerMaxW) : [];
+        const bodyBlockH = bodyLines.length * bodyLineHeight;
+
+        const hasEyebrow = igState.slide2Eyebrow.trim().length > 0;
+        const eyebrowH = hasEyebrow ? 38 : 0;
+
+        // Firma autore in basso dentro il box della Slide 2 se selezionata
+        const hasAuthor = igState.subtitle.trim().length > 0;
+        const authorH = hasAuthor ? 46 : 0;
+
+        const gapTag = 32;
+        const boxH = Math.max(460, topPadding + tagBarH + gapTag + eyebrowH + bodyBlockH + authorH + bottomPadding);
+        const boxY = Math.max(300, boxBottomY - boxH);
+
+        drawSpeechBubbleBox(ctx, boxX, boxY, boxW, boxBottomY);
+        drawCategoryTag(ctx, boxX + innerPadX, boxY + topPadding, tagBarH);
+
+        let cursorY = boxY + topPadding + tagBarH + gapTag;
+
+        if (hasEyebrow) {
+          ctx.fillStyle = igState.category.color;
+          ctx.font = "700 22px 'Oswald', sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(igState.slide2Eyebrow.toUpperCase(), boxX + innerPadX, cursorY);
+          cursorY += eyebrowH;
+        }
+
+        // Barra verticale colorata a sinistra dell'estratto
+        if (bodyLines.length > 0) {
+          ctx.fillStyle = igState.category.color;
+          ctx.fillRect(boxX + innerPadX, cursorY + 4, 6, bodyBlockH - 8);
+        }
+
+        if (igState.slide2Style === "italic") {
+          ctx.font = `italic 600 ${bodyFontSize}px sans-serif`;
+        } else if (igState.slide2Style === "bold") {
+          ctx.font = `700 ${bodyFontSize}px sans-serif`;
+        } else {
+          ctx.font = `500 ${bodyFontSize}px sans-serif`;
+        }
+        ctx.fillStyle = "#0F172A";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+
+        bodyLines.forEach(line => {
+          ctx.fillText(line, boxX + innerPadX + 24, cursorY);
+          cursorY += bodyLineHeight;
+        });
+
+        if (hasAuthor) {
+          cursorY += 22;
+          ctx.font = "700 24px sans-serif";
+          ctx.fillStyle = "#475569";
+          ctx.fillText("— " + igState.subtitle, boxX + innerPadX, cursorY);
         }
       }
-      const subBlockH = subLines.length > 0 ? (24 + subLines.length * subLineHeight) : 0;
 
-      const tagBarH = 74, topPadding = 46, gapTagTitle = 34, bottomPadding = 48;
-      const boxH = Math.max(360, topPadding + tagBarH + gapTagTitle + titleBlockH + subBlockH + bottomPadding);
-      const boxBottomY = 1110;
-      const boxY = boxBottomY - boxH;
-
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.moveTo(boxX, boxY);
-      ctx.lineTo(boxX + boxW, boxY);
-      ctx.lineTo(boxX + boxW, boxBottomY);
-      ctx.lineTo(boxX + boxW - 50, boxBottomY);
-      ctx.lineTo(boxX + boxW - 102, boxBottomY + 56);
-      ctx.lineTo(boxX + boxW - 154, boxBottomY);
-      ctx.lineTo(boxX, boxBottomY);
-      ctx.closePath();
-      ctx.fill();
-
-      // Barra rubrica
-      const tagX = boxX + innerPadX, tagY = boxY + topPadding;
-      ctx.font = igState.category.italicLabel ? "italic 700 46px 'Oswald', sans-serif" : "700 46px 'Oswald', sans-serif";
-      const labelWidth = ctx.measureText(igState.category.label).width;
-      const tagW = Math.max(390, labelWidth + 145);
-
-      ctx.fillStyle = igState.category.color;
-      ctx.fillRect(tagX, tagY, tagW, tagBarH);
-
-      ctx.fillStyle = igState.category.textColor;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(igState.category.label, tagX + 20, tagY + tagBarH / 2 + 2);
-
-      ctx.font = "42px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(igState.category.emoji, tagX + tagW - 18, tagY + tagBarH / 2 + 3);
-
-      // Titolo
-      let cursorY = tagY + tagBarH + gapTagTitle;
-      ctx.fillStyle = "#0A0A0A";
-      ctx.font = `700 ${igState.fontSize}px 'Oswald', sans-serif`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      titleLines.forEach(line => {
-        ctx.fillText(line, tagX, cursorY);
-        cursorY += titleLineHeight;
-      });
-
-      // Sottotitolo
-      if (subLines.length > 0) {
-        cursorY += 20;
-        ctx.font = igState.subtitleStyle === "bold"
-          ? `700 ${subFontSize}px sans-serif`
-          : igState.subtitleStyle === "italic"
-            ? `italic 700 ${subFontSize}px sans-serif`
-            : `500 ${subFontSize}px sans-serif`;
-        ctx.fillStyle = "#1E293B";
-        subLines.forEach(line => {
-          ctx.fillText(line, tagX, cursorY);
-          cursorY += subLineHeight;
-        });
-      }
-
-      // Footer
+      // 4. FOOTER IN BASSO
       const footerY = 1228;
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "400 25px sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      const ctaText = "leggi l'articolo completo";
+      const ctaText = igState.activeSlide === 1 ? "leggi l'articolo completo" : "continua a leggere su";
       ctx.fillText(ctaText, 108, footerY);
 
       const ctaW = ctx.measureText(ctaText).width;
@@ -1060,15 +1318,48 @@
       ctx.fillText("www.ermes-umg.it", W - 108, footerY);
     }
 
+    function drawSpeechBubbleBox(ctx, boxX, boxY, boxW, boxBottomY) {
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.moveTo(boxX, boxY);
+      ctx.lineTo(boxX + boxW, boxY);
+      ctx.lineTo(boxX + boxW, boxBottomY);
+      ctx.lineTo(boxX + boxW - 50, boxBottomY);
+      ctx.lineTo(boxX + boxW - 102, boxBottomY + 56);
+      ctx.lineTo(boxX + boxW - 154, boxBottomY);
+      ctx.lineTo(boxX, boxBottomY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawCategoryTag(ctx, tagX, tagY, tagBarH) {
+      ctx.font = igState.category.italicLabel ? "italic 700 46px 'Oswald', sans-serif" : "700 46px 'Oswald', sans-serif";
+      const labelWidth = ctx.measureText(igState.category.label).width;
+      const tagW = Math.max(390, labelWidth + 145);
+
+      ctx.fillStyle = igState.category.color;
+      ctx.fillRect(tagX, tagY, tagW, tagBarH);
+
+      ctx.fillStyle = igState.category.textColor;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(igState.category.label, tagX + 20, tagY + tagBarH / 2 + 2);
+
+      ctx.font = "42px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(igState.category.emoji, tagX + tagW - 18, tagY + tagBarH / 2 + 3);
+    }
+
     function downloadIgGraphic() {
       const canvas = document.getElementById("igPostCanvas");
       const slug = igState.category.id;
+      const slideSuffix = igState.activeSlide === 1 ? "slide1-copertina" : "slide2-estratto";
       const dateStr = new Date().toISOString().slice(0, 10);
       const link = document.createElement("a");
-      link.download = `ermes-umg-${slug}-${dateStr}.png`;
+      link.download = `ermes-umg-${slug}-${slideSuffix}-${dateStr}.png`;
       link.href = canvas.toDataURL("image/png", 1.0);
       link.click();
-      setIgStatus("⬇️ Grafica scaricata!");
+      setIgStatus(`⬇️ Slide ${igState.activeSlide} scaricata!`);
     }
 
     // CARICAMENTO STATISTICHE ARTICOLI E LETTORI
@@ -1117,6 +1408,24 @@
 
       renderAdminUsers();
       alert(`✓ Permesso statistiche aggiornato per l'utente "${users[key].name}"!`);
+    }
+
+    async function toggleUserGraphicsPermission(key) {
+      users[key].canUseGraphics = !users[key].canUseGraphics;
+
+      await fetch(WORKER_URL + "users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ users })
+      });
+
+      if (currentUser && currentUser.key === key) {
+        currentUser.canUseGraphics = users[key].canUseGraphics;
+        refreshGraficheTabVisibility();
+      }
+
+      renderAdminUsers();
+      alert(`✓ Permesso Grafiche IG aggiornato per l'utente "${users[key].name}"!`);
     }
 
     // BOZZE CONDIVISE
@@ -1522,7 +1831,7 @@
 
       if (!uKey || !name || !pass) return alert("Compila i campi obbligatori!");
 
-      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role, lastLogin: "-", canViewStats: false };
+      users[uKey] = { pass, name, link: link || "https://www.ermes-umg.it", role, lastLogin: "-", canViewStats: false, canUseGraphics: false };
 
       await fetch(WORKER_URL + "users", {
         method: "POST",
@@ -1532,6 +1841,7 @@
 
       renderAdminUsers();
       populateCoAuthorsCheckboxes();
+      populateIgAuthorsSelectors();
       alert("✓ Nuovo utente registrato!");
     }
 
@@ -1562,6 +1872,7 @@
           body: JSON.stringify({ users })
         });
         renderAdminUsers();
+        populateIgAuthorsSelectors();
       }
     }
 
@@ -1570,6 +1881,7 @@
       table.innerHTML = "";
       Object.keys(users).forEach(key => {
         const u = users[key];
+        const isGraphicsEnabled = (u.role === "admin" || u.canUseGraphics);
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-800 transition";
         tr.innerHTML = `
@@ -1587,6 +1899,14 @@
             <button onclick="toggleUserStatsPermission('${key}')" class="px-2 py-1 rounded text-[10px] font-bold ${u.canViewStats ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 border border-slate-600'}">
               ${u.canViewStats ? '✓ Abilitato' : '✕ Disabilitato'}
             </button>
+          </td>
+          <td class="p-2">
+            ${u.role === 'admin'
+              ? `<span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-600/80 text-white inline-block">✓ Sempre Attivo</span>`
+              : `<button onclick="toggleUserGraphicsPermission('${key}')" class="px-2 py-1 rounded text-[10px] font-bold ${isGraphicsEnabled ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400 border border-slate-600'}">
+                  ${isGraphicsEnabled ? '✓ Abilitato' : '✕ Disabilitato'}
+                </button>`
+            }
           </td>
           <td class="p-2">
             <input type="text" id="passInput_${key}" value="${u.pass}" class="bg-slate-700 text-amber-300 font-mono text-xs px-2 py-1 rounded border border-slate-600 w-32">
